@@ -148,3 +148,82 @@ return <div>ListPage</div>;
 }
 
 -
+
+2.8. Making the Nav bar links active:
+
+-next-match-test/src/components/nav/NavBar.tsx:
+import { Button } from '@heroui/react';
+import { buttonVariants } from '@heroui/styles';
+import Link from 'next/link';
+import { GiMatchTip } from 'react-icons/gi';
+import NavLink from './NavLink';
+
+const navLinks = [
+  { href: '/members', label: 'Matches' },
+  { href: '/lists', label: 'Lists' },
+  { href: '/messages', label: 'Messages' },
+];
+
+export default function NavBar() {
+  return (
+    <header className="p-3 w-full fixed top-0 z-50 bg-linear-to-r from-accent/85 to-black">
+      <div className="flex justify-between items-center px-10 mx-auto gap-6">
+        <Link href="/" className="flex items-center gap-2">
+          <GiMatchTip size={40} className="text-gray-200" />
+          <div className="font-bold text-3xl flex">
+            <span className="text-gray-900">Next</span>
+            <span className="text-gray-900">Match</span>
+          </div>
+        </Link>
+        <nav className="flex gap-3 my-2 uppercase text-lg text-white">
+          {navLinks.map((link) => (
+            // <Link key={link.href} href={link.href}>
+            //   {link.label}
+            // </Link>
+            <NavLink key={link.href} href={link.href} label={link.label} />
+          ))}
+        </nav>
+        <div className="flex flex-center gap-3">
+          <Link href="/login" className={buttonVariants({ variant: 'primary' })}>
+            Login
+          </Link>
+          <Link href="/register" className={buttonVariants({ variant: 'primary' })}>
+            Register
+          </Link>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+
+
+-next-match-test/src/components/nav/NavLink.tsx:
+'use client';
+import Link from 'next/link';
+import { useParams, usePathname } from 'next/navigation';
+
+type NavLinkProps = {
+  href: string;
+  label: string;
+};
+
+export default function NavLink({ href, label }: NavLinkProps) {
+  const pathName = usePathname();
+
+  return (
+    <div>
+      <Link
+        className={pathName === href ? 'text-yellow-400' : 'hover:text-yellow-400/80'}
+        href={href}
+      >
+        {label}
+      </Link>
+    </div>
+  );
+}
+
+
+-
+
+2.9.
