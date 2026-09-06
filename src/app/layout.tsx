@@ -10,8 +10,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="en">
-      <NavBar />
-      <main className="container mx-auto mt-24">{children}</main>
+      <body>
+        <NavBar />
+        <main className="container mx-auto mt-24">{children}</main>
+      </body>
     </html>
   );
 }
