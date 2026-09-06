@@ -226,4 +226,25 @@ export default function NavLink({ href, label }: NavLinkProps) {
 
 -
 
-2.9.
+2.9. Saving the code into source control and setting up GitHub
+
+-if on windows download and install git.
+https://git-scm.com/install/windows
+
+-change the brach name to master:
+-login to the github website.
+#git branch --show-current
+#git branch -M main
+#git remote add origin https://github.com/user/project.git
+#git remote -v
+#git add .
+#git commit -m "Your commit message"
+#git push
+
+
+-for login to the github through command:
+#gh auth status
+#gh auth login
+
+2.10.
+
