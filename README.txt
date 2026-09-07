@@ -248,3 +248,32 @@ https://git-scm.com/install/windows
 
 2.10.
 
+---
+
+3.9. Installing and configuring BetterAuth
+https://authjs.dev/
+https://better-auth.com/docs/installation
+
+#npm install better-auth
+
+#openssl rand -base64 32
+
+-.env file:
+BETTER_AUTH_SECRET=+ph+agz2Muvqi2p1pU9kqdbZHL3+SIlRWFcwdou/wkI=
+BETTER_AUTH_URL=http://localhost:3000
+
+
+-create folloiwing files:
+src/lib/auth.ts
+import { betterAuth } from "better-auth";
+
+export const auth = betterAuth({
+  //...
+});
+
+-configure database ORM, 
+
+
+3.10. Installing Prisma ORM and creating a Database
+
+
