@@ -276,4 +276,73 @@ export const auth = betterAuth({
 
 3.10. Installing Prisma ORM and creating a Database
 
+prisma8 → conflict with better auth
+https://www.prisma.io/docs/prisma-orm/add-to-existing-project/postgresql
+
+
+prisma7
+https://www.prisma.io/docs/orm/v7
+https://www.prisma.io/docs/v7/prisma-orm/add-to-existing-project/postgresql
+#npm install prisma@7.10.0 @types/node @types/pg --save-dev
+#npm install @prisma/client@7.10.0 @prisma/adapter-pg pg dotenv
+#npx prisma init --datasource-provider postgresql --output ../generated/prisma
+-add prisma extension
+
+
+
+-install postgresql docker-compose.yaml:
+services:
+  postgres:
+    image: postgres:18.6
+    environment:
+      POSTGRES_DB: matchdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgresql:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"postgres\" -d \"postgres\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5433:80"
+    volumes:
+      - ./pgadmin:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+
+#sudo mkdir -p ./pgadmin/sessions
+#sudo chown -R 5050:5050 ./pgadmin
+#sudo chmod -R u+rwX ./pgadmin
+#docker compose run -d
+
+#npx prisma db pull → get error because there is no table in prisma/schema.prisma
+#mkdir -p prisma/migrations/0_init
+#npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script > prisma/migrations/0_init/migration.sql
+#npx prisma migrate resolve --applied 0_init
+#npx prisma generate
+-create file lib/prisma.ts:
+import "dotenv/config";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "../generated/prisma/client";
+const connectionString = `${process.env.DATABASE_URL}`;
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
+export { prisma };
+
+
+3.11. Completing the BetterAuth setup for the app
+
+
 
