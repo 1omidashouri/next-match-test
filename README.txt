@@ -344,5 +344,54 @@ export { prisma };
 
 3.11. Completing the BetterAuth setup for the app
 
+-https://better-auth.com/docs/installation
+-configure-database
+
+-edit next-match-test/src/lib/auth.ts:
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { prisma } from "@/lib/prisma"; 
+export const auth = betterAuth({
+    database: prismaAdapter(prisma, {
+        provider: "postgresql",
+    }),
+});
+
+#npx auth@latest generate
+#npx auth@latest migrate
+-the prisma/schema.prisma update.
+
+#npx prisma generate
+#npx prisma db push
+#npx prisma studio
+
+-edit next-match-test/src/lib/auth.ts:
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { prisma } from "@/lib/prisma"; 
+export const auth = betterAuth({
+    database: prismaAdapter(prisma, {
+        provider: "postgresql", 
+    }),
+    emailAndPassword: { 
+    enabled: true, 
+  }, 
+});
+
+
+-add next-match-test/src/app/api/auth/[...all]/route.ts:
+import { auth } from "@/lib/auth";
+import { toNextJsHandler } from "better-auth/next-js";
+export const { POST, GET } = toNextJsHandler(auth);
+
+-create next-match-test/src/lib/auth-client.ts:
+import { createAuthClient } from "better-auth/react"
+export const authClient = createAuthClient({
+    baseURL: "http://localhost:3000"
+})
+
+
+
+3.12. Registering a user using BetterAuth
 
 
