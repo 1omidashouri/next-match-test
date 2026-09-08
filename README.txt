@@ -248,148 +248,8 @@ https://git-scm.com/install/windows
 
 2.10.
 
+
 ---
-
-3.9. Installing and configuring BetterAuth
-https://authjs.dev/
-https://better-auth.com/docs/installation
-
-#npm install better-auth
-
-#openssl rand -base64 32
-
--.env file:
-BETTER_AUTH_SECRET=+ph+agz2Muvqi2p1pU9kqdbZHL3+SIlRWFcwdou/wkI=
-BETTER_AUTH_URL=http://localhost:3000
-
-
--create folloiwing files:
-src/lib/auth.ts
-import { betterAuth } from "better-auth";
-
-export const auth = betterAuth({
-  //...
-});
-
--configure database ORM, 
-
-
-3.10. Installing Prisma ORM and creating a Database
-
-prisma8 → conflict with better auth
-https://www.prisma.io/docs/prisma-orm/add-to-existing-project/postgresql
-
-
-prisma7
-https://www.prisma.io/docs/orm/v7
-https://www.prisma.io/docs/v7/prisma-orm/add-to-existing-project/postgresql
-#npm install prisma@7.10.0 @types/node @types/pg --save-dev
-#npm install @prisma/client@7.10.0 @prisma/adapter-pg pg dotenv
-#npx prisma init --datasource-provider postgresql --output ../generated/prisma
--add prisma extension
-
-
-
--install postgresql docker-compose.yaml:
-services:
-  postgres:
-    image: postgres:18.6
-    environment:
-      POSTGRES_DB: matchdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - ./postgresql:/var/lib/postgresql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"postgres\" -d \"postgres\""]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "5433:80"
-    volumes:
-      - ./pgadmin:/var/lib/pgadmin
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-
-#sudo mkdir -p ./pgadmin/sessions
-#sudo chown -R 5050:5050 ./pgadmin
-#sudo chmod -R u+rwX ./pgadmin
-#docker compose run -d
-
-#npx prisma db pull → get error because there is no table in prisma/schema.prisma
-#mkdir -p prisma/migrations/0_init
-#npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script > prisma/migrations/0_init/migration.sql
-#npx prisma migrate resolve --applied 0_init
-#npx prisma generate
--create file lib/prisma.ts:
-import "dotenv/config";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../generated/prisma/client";
-const connectionString = `${process.env.DATABASE_URL}`;
-const adapter = new PrismaPg({ connectionString });
-const prisma = new PrismaClient({ adapter });
-export { prisma };
-
-
-3.11. Completing the BetterAuth setup for the app
-
--https://better-auth.com/docs/installation
--configure-database
-
--edit next-match-test/src/lib/auth.ts:
-import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
-import { prisma } from "@/lib/prisma"; 
-export const auth = betterAuth({
-    database: prismaAdapter(prisma, {
-        provider: "postgresql",
-    }),
-});
-
-#npx auth@latest generate
-#npx auth@latest migrate
--the prisma/schema.prisma update.
-
-#npx prisma generate
-#npx prisma db push
-#npx prisma studio
-
--edit next-match-test/src/lib/auth.ts:
-import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
-import { prisma } from "@/lib/prisma"; 
-export const auth = betterAuth({
-    database: prismaAdapter(prisma, {
-        provider: "postgresql", 
-    }),
-    emailAndPassword: { 
-    enabled: true, 
-  }, 
-});
-
-
--add next-match-test/src/app/api/auth/[...all]/route.ts:
-import { auth } from "@/lib/auth";
-import { toNextJsHandler } from "better-auth/next-js";
-export const { POST, GET } = toNextJsHandler(auth);
-
--create next-match-test/src/lib/auth-client.ts:
-import { createAuthClient } from "better-auth/react"
-export const authClient = createAuthClient({
-    baseURL: "http://localhost:3000"
-})
-
 
 
 3.2. Registering a user using BetterAuth
@@ -698,3 +558,155 @@ export default function LoginPage() {
 
 
 -3.7. BetterAuth and why we are using it
+pictures
+
+-3.8. Prisma ORM and why we are using it
+pictures
+
+
+
+3.9. Installing and configuring BetterAuth
+https://authjs.dev/
+https://better-auth.com/docs/installation
+
+#npm install better-auth
+
+#openssl rand -base64 32
+
+-.env file:
+BETTER_AUTH_SECRET=+ph+agz2Muvqi2p1pU9kqdbZHL3+SIlRWFcwdou/wkI=
+BETTER_AUTH_URL=http://localhost:3000
+
+
+-create folloiwing files:
+src/lib/auth.ts
+import { betterAuth } from "better-auth";
+
+export const auth = betterAuth({
+  //...
+});
+
+-configure database ORM, 
+
+
+3.10. Installing Prisma ORM and creating a Database
+
+prisma8 → conflict with better auth
+https://www.prisma.io/docs/prisma-orm/add-to-existing-project/postgresql
+
+
+prisma7
+https://www.prisma.io/docs/orm/v7
+https://www.prisma.io/docs/v7/prisma-orm/add-to-existing-project/postgresql
+#npm install prisma@7.10.0 @types/node @types/pg --save-dev
+#npm install @prisma/client@7.10.0 @prisma/adapter-pg pg dotenv
+#npx prisma init --datasource-provider postgresql --output ../generated/prisma
+-add prisma extension
+
+
+
+-install postgresql docker-compose.yaml:
+services:
+  postgres:
+    image: postgres:18.6
+    environment:
+      POSTGRES_DB: matchdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgresql:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"postgres\" -d \"postgres\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5433:80"
+    volumes:
+      - ./pgadmin:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+
+#sudo mkdir -p ./pgadmin/sessions
+#sudo chown -R 5050:5050 ./pgadmin
+#sudo chmod -R u+rwX ./pgadmin
+#docker compose run -d
+
+#npx prisma db pull → get error because there is no table in prisma/schema.prisma
+#mkdir -p prisma/migrations/0_init
+#npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script > prisma/migrations/0_init/migration.sql
+#npx prisma migrate resolve --applied 0_init
+#npx prisma generate
+-create file lib/prisma.ts:
+import "dotenv/config";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "../generated/prisma/client";
+const connectionString = `${process.env.DATABASE_URL}`;
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
+export { prisma };
+
+
+3.11. Completing the BetterAuth setup for the app
+
+-https://better-auth.com/docs/installation
+-configure-database
+
+-edit next-match-test/src/lib/auth.ts:
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { prisma } from "@/lib/prisma"; 
+export const auth = betterAuth({
+    database: prismaAdapter(prisma, {
+        provider: "postgresql",
+    }),
+});
+
+#npx auth@latest generate
+#npx auth@latest migrate
+-the prisma/schema.prisma update.
+
+#npx prisma generate
+#npx prisma db push
+#npx prisma studio
+
+-edit next-match-test/src/lib/auth.ts:
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { prisma } from "@/lib/prisma"; 
+export const auth = betterAuth({
+    database: prismaAdapter(prisma, {
+        provider: "postgresql", 
+    }),
+    emailAndPassword: { 
+    enabled: true, 
+  }, 
+});
+
+
+-add next-match-test/src/app/api/auth/[...all]/route.ts:
+import { auth } from "@/lib/auth";
+import { toNextJsHandler } from "better-auth/next-js";
+export const { POST, GET } = toNextJsHandler(auth);
+
+-create next-match-test/src/lib/auth-client.ts:
+import { createAuthClient } from "better-auth/react"
+export const authClient = createAuthClient({
+    baseURL: "http://localhost:3000"
+})
+
+
+12. Registering a user using BetterAuth
+
+
+
