@@ -1,18 +1,21 @@
 'use client';
 
-import { Button, Card, CardHeader, Input } from '@heroui/react';
+import { Button, Card, CardHeader, FieldError, Input, TextField } from '@heroui/react';
 import { GiPadlock } from 'react-icons/gi';
 import { useForm, SubmitHandler } from 'react-hook-form';
-
-interface LoginFormInput {
-  email: string;
-  password: string;
-}
+import { zodResolver } from '@hookform/resolvers/zod';
+import { LoginSchema, loginSchema } from '@/lib/schemas/loginSchema';
 
 export default function LoginForm() {
-  const { register, handleSubmit } = useForm<LoginFormInput>();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginSchema>({
+    resolver: zodResolver(loginSchema),
+  });
 
-  const onSubmit: SubmitHandler<LoginFormInput> = (data) => {
+  const onSubmit: SubmitHandler<LoginSchema> = (data) => {
     console.log('the email and password', { data });
   };
 
@@ -32,13 +35,16 @@ export default function LoginForm() {
         </div>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 px-6 py-4">
-        <Input type="email" placeholder="enter your email" defaultValue="" {...register('email')} />
-        <Input
-          type="password"
-          placeholder="enter your password"
-          defaultValue=""
-          {...register('password')}
-        />
+        <TextField defaultValue="" aria-label="email" isInvalid={!!errors.email}>
+          <Input type="email" placeholder="enter your email" {...register('email')} />
+          <FieldError>{errors.email?.message}</FieldError>
+        </TextField>
+
+        <TextField defaultValue="" aria-label="password" isInvalid={!!errors.password}>
+          <Input type="password" placeholder="enter your password" {...register('password')} />
+          <FieldError>{errors.password?.message}</FieldError>
+        </TextField>
+
         <Button type="submit" className="w-full">
           submit
         </Button>
