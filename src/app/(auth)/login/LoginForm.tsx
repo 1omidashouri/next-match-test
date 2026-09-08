@@ -1,17 +1,24 @@
 'use client';
 
 import { Button, Card, CardHeader, Input } from '@heroui/react';
-import { SyntheticEvent, useState } from 'react';
 import { GiPadlock } from 'react-icons/gi';
+import { useForm, SubmitHandler } from 'react-hook-form';
+
+interface LoginFormInput {
+  email: string;
+  password: string;
+}
 
 export default function LoginForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { register, handleSubmit } = useForm<LoginFormInput>();
 
-  const handleSubmit = (e: SyntheticEvent) => {
-    e.preventDefault();
-    console.log(`the email and password: ${email}, ${password}`);
+  const onSubmit: SubmitHandler<LoginFormInput> = (data) => {
+    console.log('the email and password', { data });
   };
+
+  // const onSubmit = (data: any) => {
+  //   console.log('the email and password', { data });
+  // };
 
   return (
     <Card className="w-md shadow-xl">
@@ -24,16 +31,13 @@ export default function LoginForm() {
           <p className="text-foreground/60">Welcome back</p>
         </div>
       </CardHeader>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-6 py-4">
-        <Input
-          type="email"
-          placeholder="enter your email"
-          onChange={(e) => setEmail(e.target.value)}
-        />
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 px-6 py-4">
+        <Input type="email" placeholder="enter your email" defaultValue="" {...register('email')} />
         <Input
           type="password"
           placeholder="enter your password"
-          onChange={(e) => setPassword(e.target.value)}
+          defaultValue=""
+          {...register('password')}
         />
         <Button type="submit" className="w-full">
           submit
