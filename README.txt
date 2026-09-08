@@ -456,4 +456,10 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   );
 }
 
+
 3.3. Using and understanding controlled inputs
+-log the values for email and password in the console.
+edit next-match-test/src/app/(auth)/login/LoginForm.tsx
+
+
+3.4. Introduction to React Hook Form
