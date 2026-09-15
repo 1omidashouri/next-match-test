@@ -1372,3 +1372,7 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/matchdb?schema=publi
 ---
 4. Building the User Interface:
 4.1. Introduction to section 4:
+
+-pictures
+
+4.2. Adding models to the Prisma ORM schema:
