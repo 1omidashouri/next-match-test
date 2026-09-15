@@ -251,7 +251,7 @@ https://git-scm.com/install/windows
 
 ---
 
-
+-
 3.2. Registering a user using BetterAuth
 
 -create next-match-test/src/app/(auth)/login/LoginForm.tsx:
@@ -321,7 +321,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
 -log the values for email and password in the console.
 edit next-match-test/src/app/(auth)/login/LoginForm.tsx
 
-
+-
 3.4. Introduction to React Hook Form
 
 https://react-hook-form.com/
@@ -383,7 +383,7 @@ export default function LoginForm() {
   );
 }
 
-
+-
 3.5. Using Zod schema validation
 
 -edit next-match-test/src/app/(auth)/login/LoginForm.tsx:
@@ -456,7 +456,7 @@ export const loginSchema = z.object({
 export type LoginSchema = z.infer<typeof loginSchema>
 
 
-
+-
 3.6. Creating a Register form
 
 -create next-match-test/src/app/(auth)/register/RegisterForm.tsx:
@@ -556,15 +556,16 @@ export default function LoginPage() {
   );
 }
 
-
+-
 -3.7. BetterAuth and why we are using it
 pictures
 
+-
 -3.8. Prisma ORM and why we are using it
 pictures
 
 
-
+-
 3.9. Installing and configuring BetterAuth
 https://authjs.dev/
 https://better-auth.com/docs/installation
@@ -588,7 +589,7 @@ export const auth = betterAuth({
 
 -configure database ORM, 
 
-
+-
 3.10. Installing Prisma ORM and creating a Database
 
 prisma8 → conflict with better auth
@@ -656,7 +657,7 @@ const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 export { prisma };
 
-
+-
 3.11. Completing the BetterAuth setup for the app
 
 -https://better-auth.com/docs/installation
@@ -705,7 +706,7 @@ export const authClient = createAuthClient({
     baseURL: "http://localhost:3000"
 })
 
-
+-
 3.12. Registering a user using BetterAuth
 
 edit next-match-test/src/app/(auth)/register/RegisterForm.tsx
@@ -798,7 +799,7 @@ export default function RegisterForm() {
 
 #npx prisma studio
 
-
+-
 3.13. Signing in a user with BetterAuth:
 -edit next-match-test/src/app/(auth)/login/LoginForm.tsx:
 
@@ -874,6 +875,7 @@ export default function LoginForm() {
   );
 }
 
+-
 3.14. Adding Toasts to notify users of events:
 
 https://ui.shadcn.com/docs/components/base/toast
@@ -1061,6 +1063,7 @@ export default function RegisterForm() {
   );
 }
 
+-
 3.15. Getting the user session data with BetterAuth:
 
 https://better-auth.com/docs/concepts/session-management
@@ -1113,6 +1116,7 @@ export default async function MembersPage() {
   );
 }
 
+-
 3.16. Adding a dropdown menu for signed in users:
 
 https://heroui.com/en/docs/react/components/avatar
@@ -1312,7 +1316,7 @@ export default function LoginForm() {
   );
 }
 
-
+-
 3.17. Using the Next.js proxy (middleware) to protect authenticated routes:
 -we want to create a authentication proxy
 https://better-auth.com/docs/integrations/next
@@ -1352,6 +1356,7 @@ export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"], 
 };
 
+-
 3.18. Using docker to run the postgres instance locally on the dev machine:
 
 -in 3.10 docker compose is mentioned.
