@@ -1314,3 +1314,41 @@ export default function LoginForm() {
 
 
 3.17. Using the Next.js proxy (middleware) to protect authenticated routes:
+-we want to create a authentication proxy
+https://better-auth.com/docs/integrations/next
+
+-in the src create a proxy file.
+
+-create next-match-test/src/proxy.ts:
+import { getSessionCookie } from 'better-auth/cookies';
+import { NextRequest, NextResponse } from 'next/server';
+
+const publicRoutes: string[] = ['/'];
+
+const authRoute: string[] = ['/login', '/register'];
+
+export async function proxy(request: NextRequest) {
+  const { nextUrl } = request;
+  const sessionCookie = getSessionCookie(request);
+
+  const isPublic = publicRoutes.includes(nextUrl.pathname);
+  const isAuthRoute = authRoute.includes(nextUrl.pathname);
+
+  if (isPublic) return NextResponse.next();
+
+  if (isAuthRoute) {
+    if (sessionCookie) {
+      return NextResponse.redirect(new URL('/members', nextUrl));
+    }
+    return NextResponse.next();
+  }
+
+  if (!sessionCookie && !isPublic) {
+    return NextResponse.redirect(new URL('/login', nextUrl));
+  }
+  return NextResponse.next();
+}
+export const config = {
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"], 
+};
+
