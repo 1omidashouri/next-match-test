@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Card, CardHeader, FieldError, Input, TextField } from '@heroui/react';
+import { Button, Card, CardHeader, FieldError, Input, TextField, toast } from '@heroui/react';
 import { GiPadlock } from 'react-icons/gi';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -31,7 +31,7 @@ export default function LoginForm() {
           router.push('/members');
         },
         onError: (context) => {
-          console.log(context.error.message);
+          toast.danger(context.error.message);
         },
       }
     );
