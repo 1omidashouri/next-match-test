@@ -6,19 +6,36 @@ import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema, loginSchema } from '@/lib/schemas/loginSchema';
 
+import { signIn } from '@/lib/auth-client';
+import { useRouter } from 'next/navigation';
+
 export default function LoginForm() {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit: SubmitHandler<LoginSchema> = (data) => {
-    console.log('the email and password', { data });
+  const onSubmit: SubmitHandler<LoginSchema> = async (data: LoginSchema) => {
+    // console.log('the email and password', { data });
+    await signIn.email(
+      {
+        email: data.email,
+        password: data.password,
+      },
+      {
+        onSuccess: () => {
+          router.push('/members');
+        },
+        onError: (context) => {
+          console.log(context.error.message);
+        },
+      }
+    );
   };
-
   // const onSubmit = (data: any) => {
   //   console.log('the email and password', { data });
   // };
@@ -45,7 +62,7 @@ export default function LoginForm() {
           <FieldError>{errors.password?.message}</FieldError>
         </TextField>
 
-        <Button type="submit" className="w-full">
+        <Button isPending={isSubmitting} type="submit" className="w-full">
           submit
         </Button>
       </form>
