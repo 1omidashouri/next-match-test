@@ -1115,3 +1115,202 @@ export default async function MembersPage() {
 
 3.16. Adding a dropdown menu for signed in users:
 
+https://heroui.com/en/docs/react/components/avatar
+https://heroui.com/en/docs/react/components/dropdown
+
+#npx shadcn@latest add dropdown-menu
+
+
+-edit next-match-test/src/lib/auth-client.ts:
+import { createAuthClient } from 'better-auth/react';
+
+export const { signIn, signUp, useSession, signOut } = createAuthClient();
+
+
+
+-create next-match-test/src/components/nav/UserMenu.tsx:
+'use client';
+import { signOut } from '@/lib/auth-client';
+import { Avatar, Dropdown, Label } from '@heroui/react';
+import { User } from 'better-auth';
+
+import { useRouter } from 'next/navigation';
+
+type UserProps = {
+  user: User;
+};
+
+export default function UserMenu({ user }: UserProps) {
+  const router = useRouter();
+  const handleSignOut = async () => {
+    await signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push('/');
+          router.refresh();
+        },
+      },
+    });
+  };
+
+  return (
+    <div>
+      <Dropdown>
+        <Dropdown.Trigger>
+          <Avatar>
+            <Avatar.Image
+              alt={user.name}
+              src="https://img.heroui.chat/image/avatar?w=400&h=400&u=3"
+            />
+            <Avatar.Fallback>{user.name.charAt(0)}</Avatar.Fallback>
+          </Avatar>
+        </Dropdown.Trigger>
+        <Dropdown.Popover>
+          <Dropdown.Menu>
+            <Dropdown.Item id="edit-file" textValue="Edit file">
+              <Label>Edit file</Label>
+            </Dropdown.Item>
+            <Dropdown.Item onClick={handleSignOut} id="logout" textValue="Logout" variant="danger">
+              <Label>Logout</Label>
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown.Popover>
+      </Dropdown>
+    </div>
+  );
+}
+
+
+-edit next-match-test/src/components/nav/NavBar.tsx:
+import { Button } from '@heroui/react';
+import { buttonVariants } from '@heroui/styles';
+import Link from 'next/link';
+import { GiMatchTip } from 'react-icons/gi';
+import NavLink from './NavLink';
+import { getCurrentUser } from '@/lib/auth';
+import UserMenu from './UserMenu';
+import { Fragment } from 'react/jsx-runtime';
+
+const navLinks = [
+  { href: '/members', label: 'Matches' },
+  { href: '/lists', label: 'Lists' },
+  { href: '/messages', label: 'Messages' },
+];
+
+export default async function NavBar() {
+  const user = await getCurrentUser();
+
+  return (
+    <header className="p-3 w-full fixed top-0 z-50 bg-linear-to-r from-accent/85 to-black">
+      <div className="flex justify-between items-center px-10 mx-auto gap-6">
+        <Link href="/" className="flex items-center gap-2">
+          <GiMatchTip size={40} className="text-gray-200" />
+          <div className="font-bold text-3xl flex">
+            <span className="text-gray-900">Next</span>
+            <span className="text-gray-900">Match</span>
+          </div>
+        </Link>
+        <nav className="flex gap-3 my-2 uppercase text-lg text-white">
+          {navLinks.map((link) => (
+            // <Link key={link.href} href={link.href}>
+            //   {link.label}
+            // </Link>
+            <NavLink key={link.href} href={link.href} label={link.label} />
+          ))}
+        </nav>
+        <div className="flex flex-center gap-3">
+          {user ? (
+            <UserMenu user={user} />
+          ) : (
+            <Fragment>
+              <Link href="/login" className={buttonVariants({ variant: 'primary' })}>
+                Login
+              </Link>
+              <Link href="/register" className={buttonVariants({ variant: 'primary' })}>
+                Register
+              </Link>
+            </Fragment>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+
+-edit next-match-test/src/app/(auth)/login/LoginForm.tsx:
+'use client';
+
+import { Button, Card, CardHeader, FieldError, Input, TextField, toast } from '@heroui/react';
+import { GiPadlock } from 'react-icons/gi';
+import { useForm, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { LoginSchema, loginSchema } from '@/lib/schemas/loginSchema';
+
+import { signIn } from '@/lib/auth-client';
+import { useRouter } from 'next/navigation';
+
+export default function LoginForm() {
+  const router = useRouter();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginSchema>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const onSubmit: SubmitHandler<LoginSchema> = async (data: LoginSchema) => {
+    // console.log('the email and password', { data });
+    await signIn.email(
+      {
+        email: data.email,
+        password: data.password,
+      },
+      {
+        onSuccess: () => {
+          router.push('/members');
+          router.refresh();
+        },
+        onError: (context) => {
+          toast.danger(context.error.message);
+        },
+      }
+    );
+  };
+  // const onSubmit = (data: any) => {
+  //   console.log('the email and password', { data });
+  // };
+
+  return (
+    <Card className="w-md shadow-xl">
+      <CardHeader className="flex flex-col justify-center items-center">
+        <div className="flex flex-col gap-2 items-center">
+          <div className="flex flex-flow items-center gap-3">
+            <GiPadlock size={30} />
+            <h1 className="text-xl font-semibold">Login</h1>
+          </div>
+          <p className="text-foreground/60">Welcome back</p>
+        </div>
+      </CardHeader>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 px-6 py-4">
+        <TextField defaultValue="" aria-label="email" isInvalid={!!errors.email}>
+          <Input type="email" placeholder="enter your email" {...register('email')} />
+          <FieldError>{errors.email?.message}</FieldError>
+        </TextField>
+
+        <TextField defaultValue="" aria-label="password" isInvalid={!!errors.password}>
+          <Input type="password" placeholder="enter your password" {...register('password')} />
+          <FieldError>{errors.password?.message}</FieldError>
+        </TextField>
+
+        <Button isPending={isSubmitting} type="submit" className="w-full">
+          submit
+        </Button>
+      </form>
+    </Card>
+  );
+}
+
+
+3.17. Using the Next.js proxy (middleware) to protect authenticated routes:

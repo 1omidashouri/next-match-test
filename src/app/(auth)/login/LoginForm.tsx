@@ -29,6 +29,7 @@ export default function LoginForm() {
       {
         onSuccess: () => {
           router.push('/members');
+          router.refresh();
         },
         onError: (context) => {
           toast.danger(context.error.message);
