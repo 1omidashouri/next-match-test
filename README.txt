@@ -1375,4 +1375,119 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/matchdb?schema=publi
 
 -pictures
 
-4.2. Adding models to the Prisma ORM schema:
+4.2.Adding models to the Prisma ORM schema:
+
+-edit next-match-test\prisma\schema.prisma:
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  member        Member?
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model Member {
+  id            String @id @default(cuid())
+  userId        String @unique
+  name          String
+  gender        String
+  dateOfBirth   DateTime @default(now())
+  created       DateTime @default(now())
+  updated       DateTime @default(now())
+  description   String
+  city          String
+  country       String
+  image         String?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photos Photo[]
+
+  @@map("member")
+}
+
+model Photo {
+  id          String @id @default(cuid())
+  url         String 
+  publicId    String?
+  memberId    String
+  member      Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("photo")
+}
+
+
+#npx prisma generate
+#npx prisma db push
+#npx prisma studio
+
+
+4.3. Adding seed data to populate the Database:
