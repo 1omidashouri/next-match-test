@@ -1352,3 +1352,18 @@ export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"], 
 };
 
+3.18. Using docker to run the postgres instance locally on the dev machine:
+
+-in 3.10 docker compose is mentioned.
+
+
+-edit next-match-test/.env:
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/matchdb?schema=public"
+
+#docker compose up -d
+#npx prisma generate
+#npx prisma db push
+
+---
+4. Building the User Interface:
+4.1. Introduction to section 4:
