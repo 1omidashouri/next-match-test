@@ -1,5 +1,5 @@
-export default function MembersPage() {
+export default function MessagesPage() {
   return (
-    <div>MembersPage</div>
+    <div>MessagesPage</div>
   )
 }

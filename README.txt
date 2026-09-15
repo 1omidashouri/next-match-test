@@ -875,7 +875,10 @@ export default function LoginForm() {
 }
 
 3.14. Adding Toasts to notify users of events:
-edit next-match-test/src/app/layout.tsx:
+
+https://ui.shadcn.com/docs/components/base/toast
+
+-edit next-match-test/src/app/layout.tsx:
 import type { Metadata } from 'next';
 import './globals.css';
 import NavBar from '@/components/nav/NavBar';
@@ -1059,3 +1062,56 @@ export default function RegisterForm() {
 }
 
 3.15. Getting the user session data with BetterAuth:
+
+https://better-auth.com/docs/concepts/session-management
+
+-edit next-match-test/src/lib/auth.ts:
+
+import { betterAuth } from 'better-auth';
+import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { prisma } from '@/lib/prisma';
+import { headers } from 'next/headers';
+
+export const auth = betterAuth({
+  database: prismaAdapter(prisma, {
+    provider: 'postgresql',
+  }),
+  emailAndPassword: {
+    enabled: true,
+  },
+});
+
+export async function getCurrentUser() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  return session?.user;
+}
+
+
+-edit next-match-test/src/app/members/page.tsx:
+
+import { getCurrentUser } from '@/lib/auth';
+import { Surface } from '@heroui/react';
+import Link from 'next/link';
+
+export default async function MembersPage() {
+  const user = await getCurrentUser();
+  return (
+    <div>
+      <h3 className="text-3xl">this is memeber page</h3>
+      <Link href={'/'}> Go back</Link>
+      {user ? (
+        <Surface className="p-4 rounded-2xl">
+          <pre>{JSON.stringify(user, null, 2)}</pre>
+        </Surface>
+      ) : (
+        <div>Not Signed in</div>
+      )}
+    </div>
+  );
+}
+
+3.16. Adding a dropdown menu for signed in users:
+
