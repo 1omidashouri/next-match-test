@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { ReactNode } from 'react';
 import MemberNav from './MemberNav';
+import SectionTitle from './SectionTitle';
 
 export default async function Layout({
   children,
@@ -55,7 +56,9 @@ export default async function Layout({
       </div>
       <div className="col-span-9">
         <Card className="w-full mt-6 h-[80vh]">
-          <Card.Header>Section title</Card.Header>
+          <Card.Header>
+            <SectionTitle />
+          </Card.Header>
           <Separator />
           <Card.Content>{children}</Card.Content>
         </Card>

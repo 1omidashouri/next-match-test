@@ -1,5 +1,6 @@
 import { getCurrentUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { cache } from 'react';
 
 export async function getMembers() {
   const currentUser = await getCurrentUser();
@@ -15,10 +16,10 @@ export async function getMembers() {
   }
 }
 
-export async function getMemberByUserId(userId: string) {
+export const getMemberByUserId = cache((userId: string) => {
   try {
     return prisma.member.findUnique({ where: { userId } });
   } catch (error) {
     console.log(error);
   }
-}
+});

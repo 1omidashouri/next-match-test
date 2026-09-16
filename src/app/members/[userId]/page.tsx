@@ -7,5 +7,5 @@ export default async function MemeberDetailedPage(props: PageProps<'/members/[us
 
   if (!member) return notFound();
 
-  return <div>{member.name}</div>;
+  return <div>{member.description}</div>;
 }
