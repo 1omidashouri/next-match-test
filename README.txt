@@ -1753,3 +1753,67 @@ export default async function MembersPage() {
 
 
 4.5. Creating Member cards part one:
+
+-create next-match-test/src/app/members/MemberCard.tsx:
+
+import { Card, CardFooter, Link } from '@heroui/react';
+import { Member } from '../../../generated/prisma/client';
+import Image from 'next/image';
+
+type MemberProps = {
+  member: Member;
+};
+
+export default function MemberCard({ member }: MemberProps) {
+  return (
+    <Link href={`/members/${member.userId}`}>
+      <Card className="transition-all duration-300 hover:scale-105 hover:shadow-xl">
+        <Image
+          alt={member.name}
+          width={500}
+          height={500}
+          sizes="(max-width: 768px) 100vw, 33vw"
+          src={member?.image || '/image/user.png'}
+          className="aspect-square object-cover relative"
+        />
+        <CardFooter className="flex w-full justify-start absolute bottom-0 overflow-hidden bg-linear-to-t from-black">
+          <div className="flex flex-col text-white p-2">
+            <span className="font-semibold">{member.name} , 42</span>
+            <span className="text-sm">{member.city}</span>
+          </div>
+        </CardFooter>
+      </Card>
+    </Link>
+  );
+}
+
+
+-edit next-match-test/src/app/members/page.tsx:
+import { getMembers } from '@/server/actions/members';
+import MemberCard from './MemberCard';
+
+export default async function MembersPage() {
+  const members = await getMembers();
+  return (
+    <div className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      {members && members.map((member) => <MemberCard key={member.id} member={member} />)}
+    </div>
+  );
+}
+
+
+-edit next-match-test/next.config.ts:
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+  /* config options here */
+  reactCompiler: true,
+  images: {
+    remotePatterns: [{ protocol: 'https', hostname: 'randomuser.me' }],
+  },
+};
+
+export default nextConfig;
+
+
+4.6. Creating Member cards part two:
