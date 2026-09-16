@@ -1907,3 +1907,47 @@ export default function MemberCard({ member }: MemberProps) {
 
 -
 4.7. Using Dynamic routes in Next.js:
+
+-edit next-match-test/src/server/actions/members.ts:
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+
+export async function getMembers() {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return null;
+  try {
+    return await prisma.member.findMany({
+      where: {
+        NOT: { userId: currentUser?.id },
+      },
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export async function getMemberByUserId(userId: string) {
+  try {
+    return prisma.member.findUnique({ where: { userId } });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+
+-create next-match-test/src/app/members/[userId]/page.tsx:
+import { getMemberByUserId } from '@/server/actions/members';
+import { notFound } from 'next/navigation';
+
+export default async function MemeberDetailedPage(props: PageProps<'/members/[userId]'>) {
+  const { userId } = await props.params;
+  const member = await getMemberByUserId(userId);
+
+  if (!member) return notFound();
+
+  return <div>{member.name}</div>;
+}
+
+
+-
+4.8. Creating the detailed page layout part one:
