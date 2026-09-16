@@ -1712,3 +1712,44 @@ export default defineConfig({
 
 4.4. Fetching data from the Database with Prisma queries:
 
+-login with:
+user: lisa@test.com
+pass: 123456789
+
+
+-create next-match-test/src/server/actions/members.ts:
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+
+export async function getMembers() {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return null;
+  try {
+    return await prisma.member.findMany({
+      where: {
+        NOT: { userId: currentUser?.id },
+      },
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+
+-update next-match-test/src/app/members/page.tsx:
+import { getMembers } from '@/server/actions/members';
+import Link from 'next/link';
+
+export default async function MembersPage() {
+  const members = await getMembers();
+  return (
+    <div>
+      <h3 className="text-3xl">this is memeber page</h3>
+      <Link href={'/'}> Go back</Link>
+      <ul>{members && members.map((member) => <li key={member.id}>{member.name}</li>)}</ul>
+    </div>
+  );
+}
+
+
+4.5. Creating Member cards part one:
