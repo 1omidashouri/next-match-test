@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { cache } from 'react';
 
 export async function getMembers() {
+  // throw new Error('test error...!');
   const currentUser = await getCurrentUser();
   if (!currentUser) return null;
   try {

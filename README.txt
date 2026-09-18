@@ -2306,3 +2306,105 @@ export const getMemberByUserId = cache((userId: string) => {
 
 -
 4.11. Using Next.js loading page conventions:
+
+-create next-match-test\src\app\members\[userId]\loading.tsx
+import { Spinner } from '@heroui/react';
+
+export default function Loading() {
+  return (
+    <div className="flex flex-col justify-center items-center h-full gap-2">
+      <Spinner className="size-10 text-accent" />
+      <span className="text-foreground/50">Loading...</span>
+    </div>
+  );
+}
+
+
+4.12.Using Next.js error handling conventions
+
+https://nextjs.org/docs/app/getting-started/error-handling
+→ Handling uncaught exceptions
+
+-create next-match-test\src\app\error.tsx:
+'use client'; // Error boundaries must be Client Components
+
+import { Button, Card } from '@heroui/react';
+import { useEffect } from 'react';
+import { FaBug } from 'react-icons/fa';
+
+export default function ErrorPage({
+  error,
+  retry,
+}: {
+  error: Error & { digest?: string };
+  retry: () => void;
+}) {
+  useEffect(() => {
+    // Log the error to an error reporting service
+    console.error(error);
+  }, [error]);
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-2 h-[calc(100vh-6rem)]">
+      <Card className="w-2/5 mx-auto shadow-xl py-10">
+        <Card.Header className="flex flex-col items-center justify-center">
+          <div className="flex flex-col gap-2 items-center">
+            <FaBug size={60} />
+            <h1 className="text-3xl font-semibold">Server error!</h1>
+          </div>
+        </Card.Header>
+        <Card.Content>
+          <div className="flex justify-center text-danger">{error.message}</div>
+        </Card.Content>
+        <Card.Footer className="flex justify-center">
+          <Button
+            onClick={
+              // Attempt to recover by re-fetching and re-rendering the segment
+              () => retry()
+            }
+          >
+            Try again
+          </Button>
+        </Card.Footer>
+      </Card>
+    </div>
+  );
+}
+
+
+-edit next-match-test\src\server\actions\members.ts:
+import { getCurrentUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { cache } from 'react';
+
+export async function getMembers() {
+  // throw new Error('test error...!');
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return null;
+  try {
+    return await prisma.member.findMany({
+      where: {
+        NOT: { userId: currentUser?.id },
+      },
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export const getMemberByUserId = cache((userId: string) => {
+  try {
+    return prisma.member.findUnique({ where: { userId } });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+
+---
+05. Adding a new feature Likes
+1. Introduction to section 5:
+-pictures
+
+-
+2. Updating the Prisma schema with the relationship models
