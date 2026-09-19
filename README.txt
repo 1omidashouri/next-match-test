@@ -2536,3 +2536,89 @@ model Like {
 -
 5.3. Adding the server actions for the like member toggle:
 
+
+-edit next-match-test/src/lib/auth.ts:
+import { betterAuth } from 'better-auth';
+import { prismaAdapter } from 'better-auth/adapters/prisma';
+import { prisma } from '@/lib/prisma';
+import { headers } from 'next/headers';
+
+export const auth = betterAuth({
+  database: prismaAdapter(prisma, {
+    provider: 'postgresql',
+  }),
+  emailAndPassword: {
+    enabled: true,
+  },
+});
+
+export async function getCurrentUser() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  return session?.user;
+}
+
+export async function requireAuthUser() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  if (!session) throw new Error('Unauthorized');
+  return session.user;
+}
+
+
+-create next-match-test/src/server/actions/likes.ts:
+import { requireAuthUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+
+export async function toggleLikeMemeber(targetUserId: string, isLiked: boolean) {
+  try {
+    const user = await requireAuthUser();
+
+    if (isLiked) {
+      //delete like
+      await prisma.like.delete({
+        where: {
+          sourceUserId_targerUderId: {
+            sourceUserId: user.id,
+            targerUderId: targetUserId,
+          },
+        },
+      });
+    } else {
+      await prisma.like.create({
+        data: {
+          sourceUserId: user.id,
+          targerUderId: targetUserId,
+        },
+      });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export async function fetchCurrentUserLikeIds() {
+  try {
+    const user = await requireAuthUser();
+    const likes = await prisma.like.findMany({
+      where: {
+        sourceUserId: user.id,
+      },
+      select: {
+        targerUderId: true,
+      },
+    });
+
+    return likes.map((like) => like.targerUderId);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+
+-
+5.4. Creating a like button:
+
