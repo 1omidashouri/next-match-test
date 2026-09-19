@@ -2,8 +2,9 @@
 
 import { requireAuthUser } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
 
-export async function toggleLikeMemeber(targetUserId: string, isLiked: boolean) {
+export async function toggleLikeMemeber(targetUserId: string, isLiked?: boolean) {
   try {
     const user = await requireAuthUser();
 
@@ -25,6 +26,8 @@ export async function toggleLikeMemeber(targetUserId: string, isLiked: boolean) 
         },
       });
     }
+    revalidatePath('/members');
+    revalidatePath(`members/${targetUserId}`);
   } catch (error) {
     console.log(error);
   }

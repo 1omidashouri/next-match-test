@@ -2758,3 +2758,167 @@ export default function MemberCard({ member }: MemberProps) {
 
 -
 5.5. Updating the Member cards to display likes:
+
+-edit next-match-test/src/app/members/page.tsx:
+
+import { getMembers } from '@/server/actions/members';
+import MemberCard from './MemberCard';
+import { fetchCurrentUserLikeIds } from '@/server/actions/likes';
+
+export default async function MembersPage() {
+  const members = await getMembers();
+  const likeIds =await fetchCurrentUserLikeIds();
+  return (
+    <div className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+      {members && members.map((member) => <MemberCard key={member.id} member={member} likeIds={likeIds} />)}
+    </div>
+  );
+}
+
+
+
+-edit next-match-test/src/app/members/MemberCard.tsx:
+
+import { Card, Link } from '@heroui/react';
+import { Member } from '../../../generated/prisma/client';
+import Image from 'next/image';
+import { calculateAge } from '@/lib/util';
+import LikeButton from '@/components/LikeButton';
+
+type MemberProps = {
+  member: Member;
+  likeIds?: string[];
+};
+
+export default function MemberCard({ member, likeIds }: MemberProps) {
+  const hasLiked = likeIds?.includes(member.userId);
+
+  return (
+    <Link href={`/members/${member.userId}`}>
+      <Card className="p-0 overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl">
+        <Image
+          alt={member.name}
+          width={500}
+          height={500}
+          loading="eager"
+          sizes="(max-width: 768px) 100vw, 33vw"
+          src={member?.image || '/image/user.png'}
+          className="aspect-square object-cover relative"
+        />
+        <div className="absolute top-3 right-3 z-50">
+          <LikeButton targerUserId={member.userId} hasLiked={hasLiked} />
+        </div>
+        <Card.Footer className="flex w-full z-10 justify-start absolute bottom-0 overflow-hidden bg-linear-to-t from-black">
+          <Card.Content className="flex flex-col text-white p-2">
+            <span className="font-semibold">
+              {member.name} , {calculateAge(member.dateOfBirth)}
+            </span>
+            <span className="text-sm">{member.city}</span>
+          </Card.Content>
+        </Card.Footer>
+      </Card>
+    </Link>
+  );
+}
+
+
+
+-edit next-match-test/src/components/LikeButton.tsx:
+
+'use client';
+import { toggleLikeMemeber } from '@/server/actions/likes';
+import { useTransition } from 'react';
+import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai';
+import { PiSpinnerGap } from 'react-icons/pi';
+
+type LikeButtonProps = {
+  targerUserId: string;
+  hasLiked?: boolean;
+};
+
+export default function LikeButton({ targerUserId, hasLiked }: LikeButtonProps) {
+  const [isPending, startTransition] = useTransition();
+
+  const toggleLike = () => {
+    startTransition(async () => {
+      await toggleLikeMemeber(targerUserId, hasLiked);
+    });
+  };
+  return (
+    <div
+      onClick={(e) => {
+        e.preventDefault();
+        toggleLike();
+      }}
+      className="relative hover:opacity-70 transition cursor-pointer"
+    >
+      {!isPending ? (
+        <>
+          <AiOutlineHeart size={28} className="fill-white absolute -top-0.5 -right-0.5" />
+          <AiFillHeart size={24} className={hasLiked ? 'fill-rose-500' : 'fill-neutral-500/70'} />
+        </>
+      ) : (
+        <PiSpinnerGap className="fill-white animate-spin" />
+      )}
+    </div>
+  );
+}
+
+
+-edit next-match-test/src/server/actions/likes.ts:
+'use server';
+
+import { requireAuthUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
+
+export async function toggleLikeMemeber(targetUserId: string, isLiked?: boolean) {
+  try {
+    const user = await requireAuthUser();
+
+    if (isLiked) {
+      //delete like
+      await prisma.like.delete({
+        where: {
+          sourceUserId_targerUderId: {
+            sourceUserId: user.id,
+            targerUderId: targetUserId,
+          },
+        },
+      });
+    } else {
+      await prisma.like.create({
+        data: {
+          sourceUserId: user.id,
+          targerUderId: targetUserId,
+        },
+      });
+    }
+    revalidatePath('/members');
+    revalidatePath(`members/${targetUserId}`);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export async function fetchCurrentUserLikeIds() {
+  try {
+    const user = await requireAuthUser();
+    const likes = await prisma.like.findMany({
+      where: {
+        sourceUserId: user.id,
+      },
+      select: {
+        targerUderId: true,
+      },
+    });
+
+    return likes.map((like) => like.targerUderId);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+
+-
+5.6. Adding an action to fetch the likes:

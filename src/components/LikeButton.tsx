@@ -6,7 +6,7 @@ import { PiSpinnerGap } from 'react-icons/pi';
 
 type LikeButtonProps = {
   targerUserId: string;
-  hasLiked: boolean;
+  hasLiked?: boolean;
 };
 
 export default function LikeButton({ targerUserId, hasLiked }: LikeButtonProps) {
@@ -28,7 +28,7 @@ export default function LikeButton({ targerUserId, hasLiked }: LikeButtonProps) 
       {!isPending ? (
         <>
           <AiOutlineHeart size={28} className="fill-white absolute -top-0.5 -right-0.5" />
-          <AiFillHeart className={hasLiked ? 'fill-rose-500' : 'fill-neutral-500/70'} />
+          <AiFillHeart size={24} className={hasLiked ? 'fill-rose-500' : 'fill-neutral-500/70'} />
         </>
       ) : (
         <PiSpinnerGap className="fill-white animate-spin" />
