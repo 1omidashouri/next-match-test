@@ -2753,6 +2753,8 @@ export default function MemberCard({ member }: MemberProps) {
   );
 }
 
+#npx prisma studio
+-check teh Like table.
 
 -
 5.5. Updating the Member cards to display likes:
