@@ -110,9 +110,9 @@ model Like {
   sourceUserId String
   sourceMember Member @relation("source",fields: [sourceUserId], references: [userId], onDelete: Cascade)
 
-  targerUderId String
-  targetMember Member @relation("target", fields: [targerUderId], references: [userId], onDelete: Cascade)
+  targetUserId String
+  targetMember Member @relation("target", fields: [targetUserId], references: [userId], onDelete: Cascade)
 
-  @@id([sourceUserId, targerUderId])
+  @@id([sourceUserId, targetUserId])
   @@map("like")
 }
