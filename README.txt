@@ -3418,3 +3418,143 @@ export default function ListTabs({ members, likeIds }: Props) {
 
 -
 5.9. Working with tabs part 3:
+
+-edit next-match-test/src/components/nav/UserMenu.tsx:
+
+'use client';
+import { signOut } from '@/lib/auth-client';
+import { Avatar, Dropdown, Label } from '@heroui/react';
+import { User } from 'better-auth';
+
+import { useRouter } from 'next/navigation';
+
+type UserProps = {
+  user: User;
+};
+
+export default function UserMenu({ user }: UserProps) {
+  const router = useRouter();
+  const handleSignOut = async () => {
+    await signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push('/');
+          router.refresh();
+        },
+      },
+    });
+  };
+
+  return (
+    <div>
+      <Dropdown>
+        <Dropdown.Trigger>
+          <Avatar>
+            <Avatar.Image
+              alt={user.name}
+              src={user.image || '/images/use.png'}
+            />
+            <Avatar.Fallback>{user.name.charAt(0)}</Avatar.Fallback>
+          </Avatar>
+        </Dropdown.Trigger>
+        <Dropdown.Popover>
+          <Dropdown.Menu>
+            <Dropdown.Item id="edit-file" textValue="Edit file">
+              <Label>Edit file</Label>
+            </Dropdown.Item>
+            <Dropdown.Item onClick={handleSignOut} id="logout" textValue="Logout" variant="danger">
+              <Label>Logout</Label>
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown.Popover>
+      </Dropdown>
+    </div>
+  );
+}
+
+
+-edit next-match-test/src/app/lists/ListTabs.tsx:
+'use client';
+
+import { Key, Spinner, Tabs } from '@heroui/react';
+import { Member } from '../../../generated/prisma/client';
+import MemberCard from '../members/MemberCard';
+import { useTransition } from 'react';
+
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+
+type Props = {
+  members: Member[];
+  likeIds: string[];
+};
+
+const tabs = [
+  { id: 'target', label: 'Members I have liked' },
+  { id: 'source', label: 'Members that like me' },
+  { id: 'mutul', label: 'Mutual liks' },
+];
+
+export default function ListTabs({ members, likeIds }: Props) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams.get('type') ?? 'target';
+  const [isPending, startTransition] = useTransition();
+
+  const handleTabChange = (id: Key) => {
+    startTransition(() => {
+      const params = new URLSearchParams(searchParams);
+      params.set('type', id.toString());
+      router.replace(`${pathname}?${params.toString()}`);
+    });
+  };
+
+  return (
+    <div className="flex flex-col mt-10 gap-5 w-full">
+      <Tabs onSelectionChange={(id) => handleTabChange(id)} selectedKey={currentTab}>
+        <div className="flex items-center">
+          <Tabs.ListContainer className="w-auto flex">
+            <Tabs.List aria-label="Like tabs">
+              {tabs.map((tab) => (
+                <Tabs.Tab
+                  className={`${currentTab === tab.id ? 'text-white' : ''} whitespace-nowrap`}
+                  key={tab.id}
+                  id={tab.id}
+                >
+                  {tab.label}
+                  <Tabs.Indicator className="bg-accent" />
+                </Tabs.Tab>
+              ))}
+            </Tabs.List>
+            {isPending && <Spinner size="md" color="accent" className="ml-2" />}
+          </Tabs.ListContainer>
+        </div>
+        {tabs.map((tab) => (
+          <Tabs.Panel key={tab.id} id={tab.id}>
+            {members.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                {members.map((member) => (
+                  <MemberCard key={member.id} likeIds={likeIds} member={member} />
+                ))}
+              </div>
+            ) : (
+              <div>No member for this filter</div>
+            )}
+          </Tabs.Panel>
+        ))}
+      </Tabs>
+    </div>
+  );
+}
+
+
+---
+06. Updating resources
+
+6.1. Introduction to section 6
+-pictures
+
+
+-
+6.2. Updating the detailed page to accommodate editing for current user
+

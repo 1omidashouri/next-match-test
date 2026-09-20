@@ -1,6 +1,6 @@
 'use client';
 
-import { Key, Tabs } from '@heroui/react';
+import { Key, Spinner, Tabs } from '@heroui/react';
 import { Member } from '../../../generated/prisma/client';
 import MemberCard from '../members/MemberCard';
 import { useTransition } from 'react';
@@ -50,6 +50,7 @@ export default function ListTabs({ members, likeIds }: Props) {
                 </Tabs.Tab>
               ))}
             </Tabs.List>
+            {isPending && <Spinner size="md" color="accent" className="ml-2" />}
           </Tabs.ListContainer>
         </div>
         {tabs.map((tab) => (
