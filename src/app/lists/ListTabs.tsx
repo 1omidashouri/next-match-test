@@ -17,7 +17,6 @@ const tabs = [
 export default function ListTabs({ members, likeIds }: Props) {
   return (
     <div className="flex flex-col mt-10 gap-5 w-full">
-      <Button className="bg-accent">Accent Button</Button>
       <Tabs>
         <div className="flex items-center">
           <Tabs.ListContainer className="w-2xl flex">
