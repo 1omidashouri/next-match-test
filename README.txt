@@ -3163,6 +3163,9 @@ async function fetchMatualLikes(id: string) {
 -
 5.7. Working with tabs part 1:
 
+
+https://heroui.com/en/docs/react/components/tabs
+
 -create next-match-test/src/app/lists/ListTabs.tsx:
 
 'use Client';
