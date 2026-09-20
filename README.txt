@@ -3558,3 +3558,245 @@ export default function ListTabs({ members, likeIds }: Props) {
 -
 6.2. Updating the detailed page to accommodate editing for current user
 
+-edit next-match-test/src/components/nav/UserMenu.tsx:
+'use client';
+import { signOut } from '@/lib/auth-client';
+import { Avatar, Dropdown, Label, Separator } from '@heroui/react';
+import { User } from 'better-auth';
+import Link from 'next/link';
+
+import { useRouter } from 'next/navigation';
+import { ComponentProps } from 'react';
+
+type UserProps = {
+  user: User;
+};
+
+export default function UserMenu({ user }: UserProps) {
+  const router = useRouter();
+  const handleSignOut = async () => {
+    await signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push('/');
+          router.refresh();
+        },
+      },
+    });
+  };
+
+  return (
+    <div>
+      <Dropdown>
+        <Dropdown.Trigger>
+          <Avatar>
+            <Avatar.Image alt={user.name} src={user.image || '/images/use.png'} />
+            <Avatar.Fallback>{user.name.charAt(0)}</Avatar.Fallback>
+          </Avatar>
+        </Dropdown.Trigger>
+        <Dropdown.Popover>
+          <Dropdown.Menu disabledKeys={['signed-in-as']}>
+            <Dropdown.Section>
+              <Dropdown.Item id="signed-in-as">Signed as {user.name}</Dropdown.Item>
+            </Dropdown.Section>
+            <Separator className="my-1" />
+            <Dropdown.Section>
+              <Dropdown.Item
+                id="edit-file"
+                textValue="Edit file"
+                render={(props) => <Link {...(props as ComponentProps<typeof Link>)} />}
+                href={`/members/${user.id}`}
+              >
+                <Label>Edit file</Label>
+              </Dropdown.Item>
+              <Dropdown.Item
+                onClick={handleSignOut}
+                id="logout"
+                textValue="Logout"
+                variant="danger"
+              >
+                <Label>Logout</Label>
+              </Dropdown.Item>
+            </Dropdown.Section>
+          </Dropdown.Menu>
+        </Dropdown.Popover>
+      </Dropdown>
+    </div>
+  );
+}
+
+
+-edit create next-match-test/src/app/members/[userId]/ProfileForm.tsx:
+export default function ProfileForm() {
+  return (
+    <div>this will be profile form</div>
+  )
+}
+
+
+
+-edit next-match-test/src/app/members/[userId]/page.tsx:
+import { getCurrentUser } from '@/lib/auth';
+import { getMemberByUserId } from '@/server/actions/members';
+import { notFound } from 'next/navigation';
+import ProfileForm from './ProfileForm';
+
+export default async function MemeberDetailedPage(props: PageProps<'/members/[userId]'>) {
+  const { userId } = await props.params;
+  const user = await getCurrentUser();
+  const member = await getMemberByUserId(userId);
+
+  const isCurrentUser = member?.id === user?.id;
+
+  if (!member) return notFound();
+
+  return <div>{isCurrentUser ? <ProfileForm /> : <div> {member.description} </div>}</div>;
+}
+
+
+
+
+-edit next-match-test/src/app/members/[userId]/MemberNav.tsx:
+'use client';
+
+import Link from 'next/link';
+import { useSelectedLayoutSegment } from 'next/navigation';
+
+type Props = {
+  userId: string;
+  sections: { segment: string | null; name: string; path: string }[];
+};
+
+export default function MemberNav({ userId, sections }: Props) {
+  const active = useSelectedLayoutSegment();
+  const base = `/members/${userId}`;
+
+  return (
+    <nav className="flex flex-col p-4 ml-4 text-2xl gap-4">
+      {sections.map(({ name, path, segment }) => (
+        <Link
+          key={name}
+          href={`${base}${path}`}
+          className={`block rounded ${active === segment ? 'text-accent' : 'hover:text-accent/50'}`}
+        >
+          {name}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+
+
+-edit next-match-test/src/app/members/[userId]/layout.tsx:
+import { calculateAge } from '@/lib/util';
+import { getMemberByUserId } from '@/server/actions/members';
+import { buttonVariants, Card, Link, Separator } from '@heroui/react';
+import Image from 'next/image';
+import { notFound } from 'next/navigation';
+import { ReactNode } from 'react';
+import MemberNav from './MemberNav';
+import SectionTitle from './SectionTitle';
+import { getCurrentUser } from '@/lib/auth';
+
+
+
+export const sections = [
+  { name: 'Profile', path: '', segment: null },
+  { name: 'Photos', path: '/photos', segment: 'photos' },
+  { name: 'Chat', path: '/chat', segment: 'chat' },
+];
+
+
+export default async function Layout({
+  children,
+  params,
+}: {
+  children: ReactNode;
+  params: Promise<{ userId: string }>;
+}) {
+  const { userId } = await params;
+  const member = await getMemberByUserId(userId);
+  const currentUser = await getCurrentUser();
+  const isCurrentUser = currentUser?.id === userId;
+
+  if (!member) return notFound();
+
+  return (
+    <div className="grid grid-cols-12 gap-5 h-[80vh]">
+      <div className="col-span-3">
+        <Card className="w-full mt-6 items-center h-[80vh]">
+          <Image
+            alt={member.name}
+            width={500}
+            height={500}
+            loading="eager"
+            sizes="(max-width: 768px) 100vw, 33vw"
+            src={member?.image || '/image/user.png'}
+            className="aspect-square object-cover relative rounded-full p-6"
+          />
+          <Card.Content>
+            <div className="flex flex-col items-center">
+              <div className="text-2xl">
+                {member.name} , {calculateAge(member.dateOfBirth)}
+              </div>
+              <div className="text-sm text-foreground/50">
+                {member.city} , {member.country}
+              </div>
+            </div>
+            <Separator />
+            <MemberNav 
+              userId={member.userId} 
+              sections={isCurrentUser ? sections.filter(x=>x.segment !== 'chat') : sections}
+              />
+          </Card.Content>
+          <Card.Footer className="w-full">
+            <Link
+              href="/member"
+              className={buttonVariants({ variant: 'primary', className: 'w-full' })}
+            >
+              Go Back
+            </Link>
+          </Card.Footer>
+        </Card>
+      </div>
+      <div className="col-span-9">
+        <Card className="w-full mt-6 h-[80vh]">
+          <Card.Header>
+            <SectionTitle sections={sections} />
+          </Card.Header>
+          <Separator />
+          <Card.Content>{children}</Card.Content>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+
+
+
+-edit next-match-test/src/app/members/[userId]/SectionTitle.tsx:
+'use client';
+import { useSelectedLayoutSegment } from 'next/navigation';
+import { sections } from './layout';
+
+type Props = {
+  sections: { segment: string | null; name: string; path: string }[];
+}
+
+export default function SectionTitle({sections}:Props) {
+  const active = useSelectedLayoutSegment();
+  console.log(active);
+  const title = sections.find((x) => x.segment === active)?.name ?? '';
+
+  return (
+    <div>
+      <h2 className="text-2xl capitalize font-semibold text-accent">{title}</h2>
+    </div>
+  );
+}
+
+
+-
+6.3.Adding a profile edit form:
