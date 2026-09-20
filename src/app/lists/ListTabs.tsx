@@ -37,11 +37,11 @@ export default function ListTabs({ members, likeIds }: Props) {
     <div className="flex flex-col mt-10 gap-5 w-full">
       <Tabs onSelectionChange={(id) => handleTabChange(id)} selectedKey={currentTab}>
         <div className="flex items-center">
-          <Tabs.ListContainer className="w-2xl flex">
+          <Tabs.ListContainer className="w-auto flex">
             <Tabs.List aria-label="Like tabs">
               {tabs.map((tab) => (
                 <Tabs.Tab
-                  className={currentTab === tab.id ? 'text-white' : ''}
+                  className={`${currentTab === tab.id ? 'text-white' : ''} whitespace-nowrap`}
                   key={tab.id}
                   id={tab.id}
                 >
