@@ -48,6 +48,7 @@ export async function fetchCurrentUserLikeIds() {
     return likes.map((like) => like.targetUserId);
   } catch (error) {
     console.log(error);
+    throw error;
   }
 }
 
@@ -63,10 +64,11 @@ export async function fetchLikesMembers(type = 'target') {
       case 'mutual':
         return await fetchMatualLikes(user.id);
       default:
-        break;
+        return [];
     }
   } catch (error) {
     console.log(error);
+    throw error;
   }
 }
 

@@ -3162,3 +3162,178 @@ async function fetchMatualLikes(id: string) {
 
 -
 5.7. Working with tabs part 1:
+
+-create next-match-test/src/app/lists/ListTabs.tsx:
+
+'use Client';
+
+import { Button, Tabs } from '@heroui/react';
+import { Member } from '../../../generated/prisma/client';
+
+type Props = {
+  members: Member[];
+  likeIds: string[];
+};
+
+const tabs = [
+  { id: 'source', label: 'Members I have liked' },
+  { id: 'target', label: 'Members that like me' },
+  { id: 'mutul', label: 'Mutual liks' },
+];
+
+export default function ListTabs({ members, likeIds }: Props) {
+  return (
+    <div className="flex flex-col mt-10 gap-5 w-full">
+      <Button className="bg-accent">Accent Button</Button>
+      <Tabs>
+        <div className="flex items-center">
+          <Tabs.ListContainer className="w-2xl flex">
+            <Tabs.List aria-label="Like tabs">
+              {tabs.map((tab) => (
+                <Tabs.Tab key={tab.id} id={tab.id}>
+                  {tab.label}
+                  <Tabs.Indicator className="bg-accent" />
+                </Tabs.Tab>
+              ))}
+            </Tabs.List>
+          </Tabs.ListContainer>
+        </div>
+      </Tabs>
+    </div>
+  );
+}
+
+
+-edit next-match-test/src/app/lists/page.tsx:
+
+import { fetchCurrentUserLikeIds, fetchLikesMembers } from '@/server/actions/likes';
+import ListTabs from './ListTabs';
+
+export default async function ListPage(props: PageProps<'/lists'>) {
+  const { type } = await props.searchParams;
+
+  const likeIds = await fetchCurrentUserLikeIds();
+  const memebers = await fetchLikesMembers(type as string);
+
+  return (
+    <div className="mt-24 mx-10">
+      <ListTabs likeIds={likeIds} members={memebers} />
+    </div>
+  );
+}
+
+-edit next-match-test/src/server/actions/likes.ts:
+'use server';
+
+import { requireAuthUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
+
+export async function toggleLikeMemeber(targetUserId: string, isLiked?: boolean) {
+  try {
+    const user = await requireAuthUser();
+
+    if (isLiked) {
+      //delete like
+      await prisma.like.delete({
+        where: {
+          sourceUserId_targetUserId: {
+            sourceUserId: user.id,
+            targetUserId: targetUserId,
+          },
+        },
+      });
+    } else {
+      await prisma.like.create({
+        data: {
+          sourceUserId: user.id,
+          targetUserId: targetUserId,
+        },
+      });
+    }
+    revalidatePath('/members');
+    revalidatePath(`members/${targetUserId}`);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export async function fetchCurrentUserLikeIds() {
+  try {
+    const user = await requireAuthUser();
+    const likes = await prisma.like.findMany({
+      where: {
+        sourceUserId: user.id,
+      },
+      select: {
+        targetUserId: true,
+      },
+    });
+
+    return likes.map((like) => like.targetUserId);
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+export async function fetchLikesMembers(type = 'target') {
+  try {
+    const user = await requireAuthUser();
+
+    switch (type) {
+      case 'target':
+        return await fetchTargetLikes(user.id);
+      case 'source':
+        return await fetchSourceLikes(user.id);
+      case 'mutual':
+        return await fetchMatualLikes(user.id);
+      default:
+        return [];
+    }
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+async function fetchTargetLikes(id: string) {
+  //return users that current user has liked
+  const targets = await prisma.like.findMany({
+    where: { sourceUserId: id },
+    select: { targetMember: true },
+  });
+
+  return targets.map((x) => x.targetMember);
+}
+
+async function fetchSourceLikes(id: string) {
+  //return users that like the current user
+  const sources = await prisma.like.findMany({
+    where: { targetUserId: id },
+    select: { sourceMember: true },
+  });
+
+  return sources.map((x) => x.sourceMember);
+}
+
+async function fetchMatualLikes(id: string) {
+  //return mutual likes
+  const likedUsers = await prisma.like.findMany({
+    where: { sourceUserId: id },
+    select: { targetUserId: true },
+  });
+  const likedIds = likedUsers.map((x) => x.targetUserId);
+
+  const mutualList = await prisma.like.findMany({
+    where: {
+      AND: [{ targetUserId: id }, { sourceUserId: { in: likedIds } }],
+    },
+    select: { sourceMember: true },
+  });
+  return mutualList.map((x) => x.sourceMember);
+}
+
+
+-
+5.8. Working with tabs part 2:
