@@ -3512,8 +3512,7 @@ export default function ListTabs({ members, likeIds }: Props) {
   return (
     <div className="flex flex-col mt-10 gap-5 w-full">
       <Tabs onSelectionChange={(id) => handleTabChange(id)} selectedKey={currentTab}>
-        <div className="flex items-center">
-          <Tabs.ListContainer className="w-auto flex">
+          <Tabs.ListContainer className="w-auto flex items-center">
             <Tabs.List aria-label="Like tabs">
               {tabs.map((tab) => (
                 <Tabs.Tab
@@ -3528,7 +3527,6 @@ export default function ListTabs({ members, likeIds }: Props) {
             </Tabs.List>
             {isPending && <Spinner size="md" color="accent" className="ml-2" />}
           </Tabs.ListContainer>
-        </div>
         {tabs.map((tab) => (
           <Tabs.Panel key={tab.id} id={tab.id}>
             {members.length > 0 ? (
