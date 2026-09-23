@@ -3,7 +3,7 @@
 import { ProfileEditSchema, profileEditSchema } from '@/lib/schemas/profileEditSchema';
 import { Member } from '../../../../generated/prisma/client';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { Path, useForm } from 'react-hook-form';
 import { Button, FieldError, Input, Label, TextArea, TextField, toast } from '@heroui/react';
 import { updateProfile } from '@/server/actions/members';
 import { useRouter } from 'next/navigation';
@@ -16,6 +16,7 @@ export default function ProfileForm({ member }: Props) {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<ProfileEditSchema>({
     // resolver: zodResolver(profileEditSchema),
@@ -30,8 +31,20 @@ export default function ProfileForm({ member }: Props) {
 
   const onSubmit = async (data: ProfileEditSchema) => {
     // console.log(data);
-    await updateProfile(data);
-    toast.success('Profile has been updated');
+    const result = await updateProfile(data);
+
+    if (result.status === 'success') {
+      toast.success('Profile has been updated');
+    } else {
+      if (Array.isArray(result.error)) {
+        // console.log(result.error);
+        result.error.forEach(e => { 
+          setError(e.path as Path<unknown>, {message:e.message})
+        })
+      } else {
+        toast.danger(result.error);
+      }
+    }
   };
 
   return (
