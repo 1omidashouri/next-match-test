@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Path, useForm } from 'react-hook-form';
 import { Button, FieldError, Input, Label, TextArea, TextField, toast } from '@heroui/react';
 import { updateProfile } from '@/server/actions/members';
-import { useRouter } from 'next/navigation';
 
 type Props = {
   member: Member;
@@ -19,7 +18,7 @@ export default function ProfileForm({ member }: Props) {
     setError,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<ProfileEditSchema>({
-    // resolver: zodResolver(profileEditSchema),
+    resolver: zodResolver(profileEditSchema),
     mode: 'onTouched',
     defaultValues: {
       name: member.name ?? '',
