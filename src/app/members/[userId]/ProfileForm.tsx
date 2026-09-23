@@ -35,8 +35,6 @@ export default function ProfileForm({ member }: Props) {
     // console.log(data);
     await updateProfile(data);
     toast.success('Profile has been updated');
-    // reset(data);
-    router.refresh();
   };
 
   return (
