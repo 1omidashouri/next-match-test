@@ -8,9 +8,11 @@ export default async function MemeberDetailedPage(props: PageProps<'/members/[us
   const user = await getCurrentUser();
   const member = await getMemberByUserId(userId);
 
-  const isCurrentUser = member?.id === user?.id;
-
   if (!member) return notFound();
+  const isCurrentUser = member.userId === user?.id;
 
-  return <div>{isCurrentUser ? <ProfileForm /> : <div> {member.description} </div>}</div>;
+  
+  return (
+    <div>{isCurrentUser ? <ProfileForm member={member} /> : <div> {member.description} </div>}</div>
+  );
 }
