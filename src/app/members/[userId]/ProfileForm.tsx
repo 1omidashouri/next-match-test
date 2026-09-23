@@ -4,19 +4,25 @@ import { ProfileEditSchema, profileEditSchema } from '@/lib/schemas/profileEditS
 import { Member } from '../../../../generated/prisma/client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Button, FieldError, Input, Label, TextArea, TextField } from '@heroui/react';
+import { Button, FieldError, Input, Label, TextArea, TextField, toast } from '@heroui/react';
+import { updateProfile } from '@/server/actions/members';
+import { useRouter } from 'next/navigation';
 
 type Props = {
   member: Member;
 };
 
 export default function ProfileForm({ member }: Props) {
+  const router = useRouter();
+
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<ProfileEditSchema>({
     resolver: zodResolver(profileEditSchema),
+    mode: 'onTouched',
     defaultValues: {
       name: member.name ?? '',
       description: member.description ?? '',
@@ -25,8 +31,12 @@ export default function ProfileForm({ member }: Props) {
     },
   });
 
-  const onSubmit = (data: ProfileEditSchema) => {
-    console.log(data);
+  const onSubmit = async (data: ProfileEditSchema) => {
+    // console.log(data);
+    await updateProfile(data);
+    toast.success('Profile has been updated');
+    // reset(data);
+    router.refresh();
   };
 
   return (
