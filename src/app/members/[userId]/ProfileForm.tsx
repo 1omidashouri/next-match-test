@@ -13,15 +13,12 @@ type Props = {
 };
 
 export default function ProfileForm({ member }: Props) {
-  const router = useRouter();
-
   const {
     register,
     handleSubmit,
-    reset,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<ProfileEditSchema>({
-    resolver: zodResolver(profileEditSchema),
+    // resolver: zodResolver(profileEditSchema),
     mode: 'onTouched',
     defaultValues: {
       name: member.name ?? '',
