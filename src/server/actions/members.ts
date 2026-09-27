@@ -69,3 +69,12 @@ export async function updateProfile(data: ProfileEditSchema): Promise<ActionResu
     }
   }
 }
+
+
+export async function getMemberPhotosByUserId(userId: string){ 
+  const member = await prisma.member.findUnique({
+    where: { userId },
+    select: {photos:true}
+  })
+  return member?.photos;
+}

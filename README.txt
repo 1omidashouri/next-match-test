@@ -4369,3 +4369,117 @@ export default function ProfileForm({ member }: Props) {
 
 -
 6.7. Displaying the user images:
+
+-edit next-match-test\src\server\actions\members.ts:
+'use server';
+import { getCurrentUser, requireAuthUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { profileEditSchema, ProfileEditSchema } from '@/lib/schemas/profileEditSchema';
+import { ActionResult } from '@/lib/types/lib';
+import { revalidatePath } from 'next/cache';
+import { cache } from 'react';
+import { Member } from '../../../generated/prisma/client';
+
+export async function getMembers() {
+  // throw new Error('test error...!');
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return null;
+  try {
+    return await prisma.member.findMany({
+      where: {
+        NOT: { userId: currentUser?.id },
+      },
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export const getMemberByUserId = cache((userId: string) => {
+  try {
+    return prisma.member.findUnique({ where: { userId } });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+export async function updateProfile(data: ProfileEditSchema): Promise<ActionResult<Member>> {
+  try {
+    const user = await requireAuthUser();
+    const validated = profileEditSchema.safeParse(data);
+
+    if (!validated.success) {
+      return { status: 'error', error: validated.error.issues };
+    }
+
+    const { name, description, city, country } = validated.data;
+
+    const member = await prisma.member.update({
+      where: { userId: user.id },
+      data: {
+        name: name,
+        description: description,
+        city: city,
+        country: country,
+        user: {
+          update: {
+            name: data.name,
+          },
+        },
+      },
+    });
+
+    revalidatePath('/members');
+    revalidatePath(`/members/${member.userId}`);
+
+    return { status: 'success', data: member };
+  } catch (error) {
+    console.log(error);
+    if (error instanceof Error) {
+      return { status: 'error', error: error.message };
+    } else {
+      return { status: 'error', error: 'some error happend!' };
+    }
+  }
+}
+
+
+export async function getMemberPhotosByUserId(userId: string){ 
+  const member = await prisma.member.findUnique({
+    where: { userId },
+    select: {photos:true}
+  })
+  return member?.photos;
+}
+
+
+-edit next-match-test\src\app\members\[userId]\photos\page.tsx:
+import { getMemberByUserId, getMemberPhotosByUserId } from '@/server/actions/members';
+import Image from 'next/image';
+
+export default async function PhotoPage(props: PageProps<'/members/[userId]/photos'>) {
+  const { userId } = await props.params;
+  const photos = await getMemberPhotosByUserId(userId);
+
+  return (
+    <div className="grid grid-cols-5 gap-3 p-5">
+      {photos?.map((photo) => (
+        <div key={photo.id} className="relative">
+          <Image
+            alt="member photo"
+            width={500}
+            height={500}
+            loading="eager"
+            sizes="(max-width:768px) 100vw,33vw"
+            src={photo.url}
+            className="aspect-square object-cover rounded-xl relative"
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+-
+6.8. Creating buttons for set main image and delete image:
