@@ -4576,3 +4576,8 @@ export default async function PhotoPage(props: PageProps<'/members/[userId]/phot
 
 -
 6.9.Image storage for web apps:
+-image
+
+-
+6.10.Setting up Cloudinary:
+
