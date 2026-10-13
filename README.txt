@@ -4483,3 +4483,96 @@ export default async function PhotoPage(props: PageProps<'/members/[userId]/phot
 
 -
 6.8. Creating buttons for set main image and delete image:
+-create next-match-test/src/components/StarButton.tsx:
+import { AiFillStar, AiOutlineStar } from 'react-icons/ai';
+import { PiSpinner } from 'react-icons/pi';
+
+type Props = {
+  selected: boolean;
+  loading: boolean;
+};
+
+export default function StarButton({ selected, loading }: Props) {
+  return (
+    <div className="relative hover:opacity-80 transition cursor-pointer">
+      {!loading ? (
+        <>
+          <AiOutlineStar size={32} className="fill-white absolute -top-0.5 -right-0.5" />
+          <AiFillStar size={28} className={selected ? 'fill-yellow-200' : 'fill-neutral-500/70'} />
+        </>
+      ) : (
+        <PiSpinner size={32} className="fill-white animate-spin" />
+      )}
+    </div>
+  );
+}
+
+
+-create next-match-test/src/components/DeleteButton.tsx:
+import { AiFillDelete, AiOutlineDelete } from 'react-icons/ai';
+import { PiSpinner } from 'react-icons/pi';
+
+type Props = {
+  loading: boolean;
+};
+
+export default function DeleteButton({ loading }: Props) {
+  return (
+    <div className="relative hover:opacity-80 transition cursor-pointer">
+      {!loading ? (
+        <>
+          <AiOutlineDelete size={32} className="fill-white absolute -top-0.5 -right-0.5" />
+          <AiFillDelete size={28} className="fill-red-600"/>
+        </>
+      ) : (
+        <PiSpinner size={32} className="fill-white animate-spin" />
+      )}
+    </div>
+  );
+}
+
+-edit next-match-test/src/app/members/[userId]/photos/page.tsx:
+import DeleteButton from '@/components/DeleteButton';
+import StarButton from '@/components/StarButton';
+import { getCurrentUser } from '@/lib/auth';
+import { getMemberByUserId, getMemberPhotosByUserId } from '@/server/actions/members';
+import Image from 'next/image';
+
+export default async function PhotoPage(props: PageProps<'/members/[userId]/photos'>) {
+  const { userId } = await props.params;
+  const photos = await getMemberPhotosByUserId(userId);
+  const currentUser = await getCurrentUser();
+  const isOwner = currentUser?.id === userId;
+
+  return (
+    <div className="grid grid-cols-5 gap-3 p-5">
+      {photos?.map((photo) => (
+        <div key={photo.id} className="relative">
+          <Image
+            alt="member photo"
+            width={500}
+            height={500}
+            loading="eager"
+            sizes="(max-width:768px) 100vw,33vw"
+            src={photo.url}
+            className="aspect-square object-cover rounded-xl relative"
+          />
+          {isOwner && (
+            <>
+              <div className="absolute top-3 left-3 z-50">
+                <StarButton selected={false} loading={false} />
+              </div>
+              <div className="absolute top-3 right-3 z-50">
+                <DeleteButton loading={false} />
+              </div>
+            </>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+-
+6.9.Image storage for web apps:
