@@ -8,14 +8,11 @@ import MemberNav from './MemberNav';
 import SectionTitle from './SectionTitle';
 import { getCurrentUser } from '@/lib/auth';
 
-
-
 export const sections = [
   { name: 'Profile', path: '', segment: null },
   { name: 'Photos', path: '/photos', segment: 'photos' },
   { name: 'Chat', path: '/chat', segment: 'chat' },
 ];
-
 
 export default async function Layout({
   children,
@@ -54,10 +51,10 @@ export default async function Layout({
               </div>
             </div>
             <Separator />
-            <MemberNav 
-              userId={member.userId} 
-              sections={isCurrentUser ? sections.filter(x=>x.segment !== 'chat') : sections}
-              />
+            <MemberNav
+              userId={member.userId}
+              sections={isCurrentUser ? sections.filter((x) => x.segment !== 'chat') : sections}
+            />
           </Card.Content>
           <Card.Footer className="w-full">
             <Link
@@ -72,7 +69,7 @@ export default async function Layout({
       <div className="col-span-9">
         <Card className="w-full mt-6 h-[80vh]">
           <Card.Header>
-            <SectionTitle sections={sections} />
+            <SectionTitle isOwner={isCurrentUser} sections={sections} />
           </Card.Header>
           <Separator />
           <Card.Content>{children}</Card.Content>

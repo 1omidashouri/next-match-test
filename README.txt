@@ -4616,3 +4616,155 @@ export {cloudinary}
 
 -
 6.11.Adding image upload:
+-create next-match-test/src/app/members/[userId]/photos/PhotoUpload.tsx:
+import { CldUploadButton } from 'next-cloudinary';
+import { HiPhoto } from 'react-icons/hi2';
+
+export default function PhotoUpload() {
+  return (
+    <CldUploadButton
+      options={{
+        maxFiles: 1,
+        folder: 'nm16-demo',
+      }}
+      onSuccess={async (result) => {
+        console.log(result);
+      }}
+      signatureEndpoint="/api/sign-image"
+      className="flex items-center bg-accent text-white gap-2 rounded-lg py-2 px-4 hover:bg-accent/70 cursor-pointer"
+    >
+      <HiPhoto size={28} />
+      Upload new image
+    </CldUploadButton>
+  );
+}
+
+-edit next-match-test/src/app/members/[userId]/SectionTitle.tsx:
+'use client';
+import { useSelectedLayoutSegment } from 'next/navigation';
+import { sections } from './layout';
+import PhotoUpload from './photos/PhotoUpload';
+
+type Props = {
+  sections: { segment: string | null; name: string; path: string }[];
+  isOwner: boolean;
+};
+
+export default function SectionTitle({ sections, isOwner }: Props) {
+  const active = useSelectedLayoutSegment();
+  console.log(active);
+  const title = sections.find((x) => x.segment === active)?.name ?? '';
+
+  return (
+    <div className="flex items-center justify-between">
+      <h2 className="text-2xl capitalize font-semibold text-accent">{title}</h2>
+      {title === 'Photos' && isOwner && <PhotoUpload />}
+    </div>
+  );
+}
+
+
+-edit next-match-test/src/app/members/[userId]/layout.tsx:
+import { calculateAge } from '@/lib/util';
+import { getMemberByUserId } from '@/server/actions/members';
+import { buttonVariants, Card, Link, Separator } from '@heroui/react';
+import Image from 'next/image';
+import { notFound } from 'next/navigation';
+import { ReactNode } from 'react';
+import MemberNav from './MemberNav';
+import SectionTitle from './SectionTitle';
+import { getCurrentUser } from '@/lib/auth';
+
+export const sections = [
+  { name: 'Profile', path: '', segment: null },
+  { name: 'Photos', path: '/photos', segment: 'photos' },
+  { name: 'Chat', path: '/chat', segment: 'chat' },
+];
+
+export default async function Layout({
+  children,
+  params,
+}: {
+  children: ReactNode;
+  params: Promise<{ userId: string }>;
+}) {
+  const { userId } = await params;
+  const member = await getMemberByUserId(userId);
+  const currentUser = await getCurrentUser();
+  const isCurrentUser = currentUser?.id === userId;
+
+  if (!member) return notFound();
+
+  return (
+    <div className="grid grid-cols-12 gap-5 h-[80vh]">
+      <div className="col-span-3">
+        <Card className="w-full mt-6 items-center h-[80vh]">
+          <Image
+            alt={member.name}
+            width={500}
+            height={500}
+            loading="eager"
+            sizes="(max-width: 768px) 100vw, 33vw"
+            src={member?.image || '/image/user.png'}
+            className="aspect-square object-cover relative rounded-full p-6"
+          />
+          <Card.Content>
+            <div className="flex flex-col items-center">
+              <div className="text-2xl">
+                {member.name} , {calculateAge(member.dateOfBirth)}
+              </div>
+              <div className="text-sm text-foreground/50">
+                {member.city} , {member.country}
+              </div>
+            </div>
+            <Separator />
+            <MemberNav
+              userId={member.userId}
+              sections={isCurrentUser ? sections.filter((x) => x.segment !== 'chat') : sections}
+            />
+          </Card.Content>
+          <Card.Footer className="w-full">
+            <Link
+              href="/member"
+              className={buttonVariants({ variant: 'primary', className: 'w-full' })}
+            >
+              Go Back
+            </Link>
+          </Card.Footer>
+        </Card>
+      </div>
+      <div className="col-span-9">
+        <Card className="w-full mt-6 h-[80vh]">
+          <Card.Header>
+            <SectionTitle isOwner={isCurrentUser} sections={sections} />
+          </Card.Header>
+          <Separator />
+          <Card.Content>{children}</Card.Content>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+
+-create next-match-test/src/app/api/sign-image/route.ts:
+import { requireAuthUser } from '@/lib/auth';
+import { cloudinary } from '@/lib/claudinary';
+
+//api end point
+export async function POST(request: Request) {
+  await requireAuthUser();
+
+  const { paramsToSign } = await request.json();
+
+  const signature = cloudinary.v2.utils.api_sign_request(
+    paramsToSign,
+    process.env.CLOUDINARY_API_SECRET as string
+  );
+
+  return Response.json({signature})
+}
+
+
+-
+6.12.Adding the server action for image upload:
