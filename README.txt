@@ -4578,6 +4578,41 @@ export default async function PhotoPage(props: PageProps<'/members/[userId]/phot
 6.9.Image storage for web apps:
 -image
 
+
 -
 6.10.Setting up Cloudinary:
+https://cloudinary.com/
+-create account and key in the cloudinary web site
 
+#npm install cloudinary next-cloudinary
+
+-edit next-match-test/.env:
+BETTER_AUTH_SECRET=+ph+agz2Muvqi2p1pU9kqdbZHL3+SIlRWFcwdou/wkI=
+BETTER_AUTH_URL=http://localhost:3000
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/matchdb?schema=public"
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your cloudinary cloud name"
+NEXT_PUBLIC_CLOUDINARY_API_KEY="your cloudinary api key"
+CLOUDINARY_API_SECRET="your cloudinary secret key"
+
+-create next-match-test/.env.example:
+BETTER_AUTH_SECRET="your better auth secret"
+BETTER_AUTH_URL=http://localhost:3000
+DATABASE_URL="your postgres connection string"
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME="your cloudinary cloud name"
+NEXT_PUBLIC_CLOUDINARY_API_KEY="your cloudinary api key"
+CLOUDINARY_API_SECRET="your cloudinary secret key"
+
+-create next-match-test/src/lib/claudinary.ts:
+import cloudinary from 'cloudinary';
+
+cloudinary.v2.config({
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
+  aoi_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+export {cloudinary}
+
+
+-
+6.11.Adding image upload:
