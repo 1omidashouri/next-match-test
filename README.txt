@@ -4921,3 +4921,82 @@ export default nextConfig;
 
 -
 6.13.Using the CldImage component to display Cloudinary images with transformations:
+
+create next-match-test/src/components/MemeberImage.tsx:
+'use client';
+
+import { CldImage } from 'next-cloudinary';
+import { Photo } from '../../generated/prisma/browser';
+import Image from 'next/image';
+
+type Props = {
+  photo: Photo;
+};
+
+export default function MemberImage({ photo }: Props) {
+  return (
+    <div>
+      {photo.publicId ? (
+        <CldImage
+          alt="image of member"
+          src={photo.publicId}
+          width={300}
+          height={300}
+          crop="fill"
+          gravity="faces"
+          className="rounded-xl"
+        />
+      ) : (
+        <Image
+          alt="member photo"
+          width={300}
+          height={300}
+          loading="eager"
+          sizes="(max-width:768px) 100vw,33vw"
+          src={photo.url}
+          className="aspect-square object-cover rounded-xl relative"
+        />
+      )}
+    </div>
+  );
+}
+
+
+-edit next-match-test/src/app/members/[userId]/photos/page.tsx:
+import DeleteButton from '@/components/DeleteButton';
+import MemberImage from '@/components/MemeberImage';
+import StarButton from '@/components/StarButton';
+import { getCurrentUser } from '@/lib/auth';
+import { getMemberByUserId, getMemberPhotosByUserId } from '@/server/actions/members';
+import Image from 'next/image';
+
+export default async function PhotoPage(props: PageProps<'/members/[userId]/photos'>) {
+  const { userId } = await props.params;
+  const photos = await getMemberPhotosByUserId(userId);
+  const currentUser = await getCurrentUser();
+  const isOwner = currentUser?.id === userId;
+
+  return (
+    <div className="grid grid-cols-5 gap-3 p-5">
+      {photos?.map((photo) => (
+        <div key={photo.id} className="relative">
+          <MemberImage photo={photo} />
+          {isOwner && (
+            <>
+              <div className="absolute top-3 left-3 z-50">
+                <StarButton selected={false} loading={false} />
+              </div>
+              <div className="absolute top-3 right-3 z-50">
+                <DeleteButton loading={false} />
+              </div>
+            </>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+-
+14. Adding the set main image functionality:
