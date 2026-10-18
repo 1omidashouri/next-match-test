@@ -4768,3 +4768,156 @@ export async function POST(request: Request) {
 
 -
 6.12.Adding the server action for image upload:
+
+-edit next-match-test/src/server/actions/members.ts:
+'use server';
+import { getCurrentUser, requireAuthUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { profileEditSchema, ProfileEditSchema } from '@/lib/schemas/profileEditSchema';
+import { ActionResult } from '@/lib/types/lib';
+import { revalidatePath } from 'next/cache';
+import { cache } from 'react';
+import { Member } from '../../../generated/prisma/client';
+
+export async function getMembers() {
+  // throw new Error('test error...!');
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return null;
+  try {
+    return await prisma.member.findMany({
+      where: {
+        NOT: { userId: currentUser?.id },
+      },
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export const getMemberByUserId = cache((userId: string) => {
+  try {
+    return prisma.member.findUnique({ where: { userId } });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+export async function updateProfile(data: ProfileEditSchema): Promise<ActionResult<Member>> {
+  try {
+    const user = await requireAuthUser();
+    const validated = profileEditSchema.safeParse(data);
+
+    if (!validated.success) {
+      return { status: 'error', error: validated.error.issues };
+    }
+
+    const { name, description, city, country } = validated.data;
+
+    const member = await prisma.member.update({
+      where: { userId: user.id },
+      data: {
+        name: name,
+        description: description,
+        city: city,
+        country: country,
+        user: {
+          update: {
+            name: data.name,
+          },
+        },
+      },
+    });
+
+    revalidatePath('/members');
+    revalidatePath(`/members/${member.userId}`);
+
+    return { status: 'success', data: member };
+  } catch (error) {
+    console.log(error);
+    if (error instanceof Error) {
+      return { status: 'error', error: error.message };
+    } else {
+      return { status: 'error', error: 'some error happend!' };
+    }
+  }
+}
+
+export async function getMemberPhotosByUserId(userId: string) {
+  const member = await prisma.member.findUnique({
+    where: { userId },
+    select: { photos: true },
+  });
+  return member?.photos;
+}
+
+export async function addImage(url: string, publicId: string) {
+  try {
+    const user = await requireAuthUser();
+    const member = await prisma.member.update({
+      where: { userId: user.id },
+      data: {
+        photos: {
+          create: [{ url, publicId }],
+        },
+      },
+    });
+
+    revalidatePath(`/members/${member.userId}/photos`);
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+
+-edit next-match-test/src/app/members/[userId]/photos/PhotoUpload.tsx:
+import { addImage } from '@/server/actions/members';
+import { toast } from '@heroui/react';
+import { CldUploadButton } from 'next-cloudinary';
+import { HiPhoto } from 'react-icons/hi2';
+
+export default function PhotoUpload() {
+  return (
+    <CldUploadButton
+      options={{
+        maxFiles: 1,
+        folder: 'nm16-demo',
+      }}
+      onSuccess={async (result) => {
+        if (result.info && typeof result.info === 'object') {
+          await addImage(result.info.secure_url, result.info.public_id);
+        }
+      }}
+      onError={(e) => {
+        if (e && typeof e === 'object') toast.danger(e.statusText);
+        else toast.danger('problem add image');
+      }}
+      signatureEndpoint="/api/sign-image"
+      className="flex items-center bg-accent text-white gap-2 rounded-lg py-2 px-4 hover:bg-accent/70 cursor-pointer"
+    >
+      <HiPhoto size={28} />
+      Upload new image
+    </CldUploadButton>
+  );
+}
+
+
+-edit next-match-test/next.config.ts:
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+  /* config options here */
+  reactCompiler: true,
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'randomuser.me' },
+      { protocol: 'https', hostname: 'res.cloudinary.com' }
+    ],
+  },
+};
+
+export default nextConfig;
+
+
+-
+6.13.Using the CldImage component to display Cloudinary images with transformations:

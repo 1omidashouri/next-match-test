@@ -70,11 +70,29 @@ export async function updateProfile(data: ProfileEditSchema): Promise<ActionResu
   }
 }
 
-
-export async function getMemberPhotosByUserId(userId: string){ 
+export async function getMemberPhotosByUserId(userId: string) {
   const member = await prisma.member.findUnique({
     where: { userId },
-    select: {photos:true}
-  })
+    select: { photos: true },
+  });
   return member?.photos;
+}
+
+export async function addImage(url: string, publicId: string) {
+  try {
+    const user = await requireAuthUser();
+    const member = await prisma.member.update({
+      where: { userId: user.id },
+      data: {
+        photos: {
+          create: [{ url, publicId }],
+        },
+      },
+    });
+
+    revalidatePath(`/members/${member.userId}/photos`);
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
 }
