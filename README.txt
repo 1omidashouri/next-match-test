@@ -5193,4 +5193,234 @@ export default async function PhotoPage(props: PageProps<'/members/[userId]/phot
   );
 }
 
+
+-
 6.15. Adding the delete image functionality:
+-edit next-match-test/src/server/actions/members.ts:
+'use server';
+import { getCurrentUser, requireAuthUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { profileEditSchema, ProfileEditSchema } from '@/lib/schemas/profileEditSchema';
+import { ActionResult } from '@/lib/types/lib';
+import { revalidatePath } from 'next/cache';
+import { cache } from 'react';
+import { Member, Photo } from '../../../generated/prisma/client';
+import { cloudinary } from '@/lib/claudinary';
+
+export async function getMembers() {
+  // throw new Error('test error...!');
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return null;
+  try {
+    return await prisma.member.findMany({
+      where: {
+        NOT: { userId: currentUser?.id },
+      },
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export const getMemberByUserId = cache((userId: string) => {
+  try {
+    return prisma.member.findUnique({ where: { userId } });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+export async function updateProfile(data: ProfileEditSchema): Promise<ActionResult<Member>> {
+  try {
+    const user = await requireAuthUser();
+    const validated = profileEditSchema.safeParse(data);
+
+    if (!validated.success) {
+      return { status: 'error', error: validated.error.issues };
+    }
+
+    const { name, description, city, country } = validated.data;
+
+    const member = await prisma.member.update({
+      where: { userId: user.id },
+      data: {
+        name: name,
+        description: description,
+        city: city,
+        country: country,
+        user: {
+          update: {
+            name: data.name,
+          },
+        },
+      },
+    });
+
+    revalidatePath('/members');
+    revalidatePath(`/members/${member.userId}`);
+
+    return { status: 'success', data: member };
+  } catch (error) {
+    console.log(error);
+    if (error instanceof Error) {
+      return { status: 'error', error: error.message };
+    } else {
+      return { status: 'error', error: 'some error happend!' };
+    }
+  }
+}
+
+export async function getMemberPhotosByUserId(userId: string) {
+  const member = await prisma.member.findUnique({
+    where: { userId },
+    select: { photos: true },
+  });
+  return member?.photos;
+}
+
+export async function addImage(url: string, publicId: string) {
+  try {
+    const user = await requireAuthUser();
+    const member = await prisma.member.update({
+      where: { userId: user.id },
+      data: {
+        photos: {
+          create: [{ url, publicId }],
+        },
+      },
+    });
+
+    revalidatePath(`/members/${member.userId}/photos`);
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+export async function setMainImage(photo: Photo) {
+  try {
+    const user = await requireAuthUser();
+    const result = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        image: photo.url,
+        member: {
+          update: {
+            image: photo.url,
+          },
+        },
+      },
+    });
+
+    revalidatePath(`/members/${user.id}/photos`);
+    revalidatePath(`/members`);
+
+    return result;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+export async function deleteImage(photo: Photo) {
+  try {
+    const user = await requireAuthUser();
+    if (photo.publicId) {
+      await cloudinary.v2.uploader.destroy(photo.publicId);
+    }
+
+    const result = prisma.member.update({
+      where: { userId: user.id },
+      data: {
+        photos: {
+          delete: {
+            id: photo.id,
+          },
+        },
+      },
+    });
+
+    revalidatePath(`/members/${user.id}/photos`);
+
+    return result;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+
+-edit next-match-test/src/app/members/[userId]/photos/PhotoButtons.tsx:
+
+'use client';
+
+import { User } from 'better-auth';
+import { Photo } from '../../../../../generated/prisma/client';
+import StarButton from '@/components/StarButton';
+import DeleteButton from '@/components/DeleteButton';
+import { useTransition } from 'react';
+import { deleteImage, setMainImage } from '@/server/actions/members';
+
+type Props = {
+  photo: Photo;
+  user: User;
+};
+
+export default function PhotoButtons({ photo, user }: Props) {
+  const [isMainPending, startMainTransition] = useTransition();
+  const [isDeletePending, startDeleteTransiton] = useTransition();
+
+  const onSetMain = (photo: Photo) => {
+    startMainTransition(() => {
+      setMainImage(photo);
+    });
+  };
+
+  const onDeleteImage = (photo: Photo) => {
+    if (photo.url === user.image) return null;
+    startDeleteTransiton(() => {
+      deleteImage(photo);
+    });
+  };
+
+  return (
+    <>
+      <div onClick={() => onSetMain(photo)} className="absolute top-3 left-3 z-50">
+        <StarButton selected={photo.url === user.image} loading={isMainPending} />
+      </div>
+      <div onClick={() => onDeleteImage(photo)} className="absolute top-3 right-3 z-50">
+        <DeleteButton disabled={photo.url === user.image} loading={isDeletePending} />
+      </div>
+    </>
+  );
+}
+ 
+
+-edit next-match-test/src/components/DeleteButton.tsx:
+import { AiFillDelete, AiOutlineDelete } from 'react-icons/ai';
+import { PiSpinner } from 'react-icons/pi';
+
+type Props = {
+  loading: boolean;
+  disabled: boolean;
+};
+
+export default function DeleteButton({ loading, disabled }: Props) {
+  if (disabled) return null;
+  return (
+    <div className="relative hover:opacity-80 transition cursor-pointer">
+      {!loading ? (
+        <>
+          <AiOutlineDelete size={32} className="fill-white absolute -top-0.5 -right-0.5" />
+          <AiFillDelete size={28} className="fill-red-600" />
+        </>
+      ) : (
+        <PiSpinner size={32} className="fill-white animate-spin" />
+      )}
+    </div>
+  );
+}
+
+
+-
+6.16. Adding a transform image function to apply Cloudinary transformations:

@@ -6,6 +6,7 @@ import { ActionResult } from '@/lib/types/lib';
 import { revalidatePath } from 'next/cache';
 import { cache } from 'react';
 import { Member, Photo } from '../../../generated/prisma/client';
+import { cloudinary } from '@/lib/claudinary';
 
 export async function getMembers() {
   // throw new Error('test error...!');
@@ -97,7 +98,7 @@ export async function addImage(url: string, publicId: string) {
   }
 }
 
-export async function setMainImage(photo:Photo) {
+export async function setMainImage(photo: Photo) {
   try {
     const user = await requireAuthUser();
     const result = await prisma.user.update({
@@ -116,7 +117,33 @@ export async function setMainImage(photo:Photo) {
     revalidatePath(`/members`);
 
     return result;
-    
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+export async function deleteImage(photo: Photo) {
+  try {
+    const user = await requireAuthUser();
+    if (photo.publicId) {
+      await cloudinary.v2.uploader.destroy(photo.publicId);
+    }
+
+    const result = prisma.member.update({
+      where: { userId: user.id },
+      data: {
+        photos: {
+          delete: {
+            id: photo.id,
+          },
+        },
+      },
+    });
+
+    revalidatePath(`/members/${user.id}/photos`);
+
+    return result;
   } catch (error) {
     console.log(error);
     throw error;
