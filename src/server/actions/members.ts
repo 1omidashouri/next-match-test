@@ -5,7 +5,7 @@ import { profileEditSchema, ProfileEditSchema } from '@/lib/schemas/profileEditS
 import { ActionResult } from '@/lib/types/lib';
 import { revalidatePath } from 'next/cache';
 import { cache } from 'react';
-import { Member } from '../../../generated/prisma/client';
+import { Member, Photo } from '../../../generated/prisma/client';
 
 export async function getMembers() {
   // throw new Error('test error...!');
@@ -91,6 +91,32 @@ export async function addImage(url: string, publicId: string) {
     });
 
     revalidatePath(`/members/${member.userId}/photos`);
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+export async function setMainImage(photo:Photo) {
+  try {
+    const user = await requireAuthUser();
+    const result = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        image: photo.url,
+        member: {
+          update: {
+            image: photo.url,
+          },
+        },
+      },
+    });
+
+    revalidatePath(`/members/${user.id}/photos`);
+    revalidatePath(`/members`);
+
+    return result;
+    
   } catch (error) {
     console.log(error);
     throw error;

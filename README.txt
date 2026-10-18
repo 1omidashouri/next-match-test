@@ -4999,4 +4999,198 @@ export default async function PhotoPage(props: PageProps<'/members/[userId]/phot
 
 
 -
-14. Adding the set main image functionality:
+6.14. Adding the set main image functionality:
+
+-edit next-match-test/src/server/actions/members.ts:
+'use server';
+import { getCurrentUser, requireAuthUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { profileEditSchema, ProfileEditSchema } from '@/lib/schemas/profileEditSchema';
+import { ActionResult } from '@/lib/types/lib';
+import { revalidatePath } from 'next/cache';
+import { cache } from 'react';
+import { Member, Photo } from '../../../generated/prisma/client';
+
+export async function getMembers() {
+  // throw new Error('test error...!');
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return null;
+  try {
+    return await prisma.member.findMany({
+      where: {
+        NOT: { userId: currentUser?.id },
+      },
+    });
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export const getMemberByUserId = cache((userId: string) => {
+  try {
+    return prisma.member.findUnique({ where: { userId } });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+export async function updateProfile(data: ProfileEditSchema): Promise<ActionResult<Member>> {
+  try {
+    const user = await requireAuthUser();
+    const validated = profileEditSchema.safeParse(data);
+next-match-test/src/app/members/[userId]/photos/page.tsx
+    if (!validated.success) {
+      return { status: 'error', error: validated.error.issues };
+    }
+
+    const { name, description, city, country } = validated.data;
+
+    const member = await prisma.member.update({
+      where: { userId: user.id },
+      data: {
+        name: name,
+        description: description,
+        city: city,
+        country: country,
+        user: {
+          update: {
+            name: data.name,
+          },
+        },
+      },
+    });
+
+    revalidatePath('/members');
+    revalidatePath(`/members/${member.userId}`);
+
+    return { status: 'success', data: member };
+  } catch (error) {
+    console.log(error);
+    if (error instanceof Error) {
+      return { status: 'error', error: error.message };
+    } else {
+      return { status: 'error', error: 'some error happend!' };
+    }
+  }
+}
+
+export async function getMemberPhotosByUserId(userId: string) {
+  const member = await prisma.member.findUnique({
+    where: { userId },
+    select: { photos: true },
+  });
+  return member?.photos;
+}
+
+export async function addImage(url: string, publicId: string) {
+  try {
+    const user = await requireAuthUser();
+    const member = await prisma.member.update({
+      where: { userId: user.id },
+      data: {
+        photos: {
+          create: [{ url, publicId }],
+        },
+      },
+    });
+
+    revalidatePath(`/members/${member.userId}/photos`);
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+export async function setMainImage(photo:Photo) {
+  try {
+    const user = await requireAuthUser();
+    const result = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        image: photo.url,
+        member: {
+          update: {
+            image: photo.url,
+          },
+        },
+      },
+    });
+
+    revalidatePath(`/members/${user.id}/photos`);
+    revalidatePath(`/members`);
+
+    return result;
+    
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+
+-create next-match-test/src/app/members/[userId]/photos/PhotoButtons.tsx:
+'use client';
+
+import { User } from 'better-auth';
+import { Photo } from '../../../../../generated/prisma/client';
+import StarButton from '@/components/StarButton';
+import DeleteButton from '@/components/DeleteButton';
+import { useTransition } from 'react';
+import { setMainImage } from '@/server/actions/members';
+
+type Props = {
+  photo: Photo;
+  user: User;
+};
+
+export default function PhotoButtons({ photo, user }: Props) {
+  const [isMainPending, startMainTransition] = useTransition();
+
+  const onSetMain = (photo: Photo) => {
+    startMainTransition(() => {
+      setMainImage(photo);
+    });
+  };
+
+  return (
+    <>
+      <div onClick={() => onSetMain(photo)} className="absolute top-3 left-3 z-50">
+        <StarButton selected={photo.url === user.image} loading={isMainPending} />
+      </div>
+      <div className="absolute top-3 right-3 z-50">
+        <DeleteButton loading={false} />
+      </div>
+    </>
+  );
+}
+
+
+-update next-match-test/src/app/members/[userId]/photos/page.tsx:
+
+import MemberImage from '@/components/MemeberImage';
+import { getCurrentUser } from '@/lib/auth';
+import { getMemberPhotosByUserId } from '@/server/actions/members';
+import PhotoButtons from './PhotoButtons';
+
+
+export default async function PhotoPage(props: PageProps<'/members/[userId]/photos'>) {
+  const { userId } = await props.params;
+  const photos = await getMemberPhotosByUserId(userId);
+  const currentUser = await getCurrentUser();
+  const isOwner = currentUser?.id === userId;
+
+  return (
+    <div className="grid grid-cols-5 gap-3 p-5">
+      {photos?.map((photo) => (
+        <div key={photo.id} className="relative">
+          <MemberImage photo={photo} />
+          {isOwner && (
+            <PhotoButtons photo={photo} user={currentUser} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+6.15. Adding the delete image functionality:
