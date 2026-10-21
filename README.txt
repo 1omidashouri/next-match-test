@@ -5424,3 +5424,184 @@ export default function DeleteButton({ loading, disabled }: Props) {
 
 -
 6.16. Adding a transform image function to apply Cloudinary transformations:
+
+-edit next-match-test/src/lib/util.ts:
+import { differenceInYears } from 'date-fns';
+
+export function calculateAge(dob: string | Date) {
+  return differenceInYears(new Date(), new Date(dob));
+}
+
+export function transformImageUrl(imageUrl?: string | null) {
+  if (!imageUrl) return null;
+  if (!imageUrl.includes('cloudinary')) return imageUrl;
+
+  const uploadIndex = imageUrl.indexOf('/upload') + '/upload/'.length;
+
+  const transformation = 'c_fill,w_640,h_640,g_face';
+
+  return `${imageUrl.slice(0, uploadIndex)}${transformImageUrl}${imageUrl.slice(uploadIndex)}`;
+}
+
+
+-edit next-match-test/src/app/members/[userId]/layout.tsx:
+import { calculateAge, transformImageUrl } from '@/lib/util';
+import { getMemberByUserId } from '@/server/actions/members';
+import { buttonVariants, Card, Link, Separator } from '@heroui/react';
+import Image from 'next/image';
+import { notFound } from 'next/navigation';
+import { ReactNode } from 'react';
+import MemberNav from './MemberNav';
+import SectionTitle from './SectionTitle';
+import { getCurrentUser } from '@/lib/auth';
+
+export const sections = [
+  { name: 'Profile', path: '', segment: null },
+  { name: 'Photos', path: '/photos', segment: 'photos' },
+  { name: 'Chat', path: '/chat', segment: 'chat' },
+];
+
+export default async function Layout({
+  children,
+  params,
+}: {
+  children: ReactNode;
+  params: Promise<{ userId: string }>;
+}) {
+  const { userId } = await params;
+  const member = await getMemberByUserId(userId);
+  const currentUser = await getCurrentUser();
+  const isCurrentUser = currentUser?.id === userId;
+
+  if (!member) return notFound();
+
+  return (
+    <div className="grid grid-cols-12 gap-5 h-[80vh]">
+      <div className="col-span-3">
+        <Card className="w-full mt-6 items-center h-[80vh]">
+          <Image
+            alt={member.name}
+            width={500}
+            height={500}
+            loading="eager"
+            sizes="(max-width: 768px) 100vw, 33vw"
+            src={transformImageUrl(member?.image) || '/image/user.png'}
+            className="aspect-square object-cover relative rounded-full p-6"
+          />
+          <Card.Content>
+            <div className="flex flex-col items-center">
+              <div className="text-2xl">
+                {member.name} , {calculateAge(member.dateOfBirth)}
+              </div>
+              <div className="text-sm text-foreground/50">
+                {member.city} , {member.country}
+              </div>
+            </div>
+            <Separator />
+            <MemberNav
+              userId={member.userId}
+              sections={isCurrentUser ? sections.filter((x) => x.segment !== 'chat') : sections}
+            />
+          </Card.Content>
+          <Card.Footer className="w-full">
+            <Link
+              href="/member"
+              className={buttonVariants({ variant: 'primary', className: 'w-full' })}
+            >
+              Go Back
+            </Link>
+          </Card.Footer>
+        </Card>
+      </div>
+      <div className="col-span-9">
+        <Card className="w-full mt-6 h-[80vh]">
+          <Card.Header>
+            <SectionTitle isOwner={isCurrentUser} sections={sections} />
+          </Card.Header>
+          <Separator />
+          <Card.Content>{children}</Card.Content>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+
+-edit next-match-test/src/components/nav/UserMenu.tsx:
+'use client';
+import { signOut } from '@/lib/auth-client';
+import { transformImageUrl } from '@/lib/util';
+import { Avatar, Dropdown, Label, Separator } from '@heroui/react';
+import { User } from 'better-auth';
+import Link from 'next/link';
+
+import { useRouter } from 'next/navigation';
+import { ComponentProps } from 'react';
+
+type UserProps = {
+  user: User;
+};
+
+export default function UserMenu({ user }: UserProps) {
+  const router = useRouter();
+  const handleSignOut = async () => {
+    await signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push('/');
+          router.refresh();
+        },
+      },
+    });
+  };
+
+  return (
+    <div>
+      <Dropdown>
+        <Dropdown.Trigger>
+          <Avatar>
+            <Avatar.Image
+              alt={user.name}
+              src={transformImageUrl(user.image) || '/images/use.png'}
+            />
+            <Avatar.Fallback>{user.name.charAt(0)}</Avatar.Fallback>
+          </Avatar>
+        </Dropdown.Trigger>
+        <Dropdown.Popover>
+          <Dropdown.Menu disabledKeys={['signed-in-as']}>
+            <Dropdown.Section>
+              <Dropdown.Item id="signed-in-as">Signed as {user.name}</Dropdown.Item>
+            </Dropdown.Section>
+            <Separator className="my-1" />
+            <Dropdown.Section>
+              <Dropdown.Item
+                id="edit-file"
+                textValue="Edit file"
+                render={(props) => <Link {...(props as ComponentProps<typeof Link>)} />}
+                href={`/members/${user.id}`}
+              >
+                <Label>Edit file</Label>
+              </Dropdown.Item>
+              <Dropdown.Item
+                onClick={handleSignOut}
+                id="logout"
+                textValue="Logout"
+                variant="danger"
+              >
+                <Label>Logout</Label>
+              </Dropdown.Item>
+            </Dropdown.Section>
+          </Dropdown.Menu>
+        </Dropdown.Popover>
+      </Dropdown>
+    </div>
+  );
+}
+
+
+-
+07.Messaging:
+07.1.Introduction:
+-image
+-
+07.2.Adding the Prisma schema models for messaging:

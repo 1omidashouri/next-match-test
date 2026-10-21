@@ -1,4 +1,4 @@
-import { calculateAge } from '@/lib/util';
+import { calculateAge, transformImageUrl } from '@/lib/util';
 import { getMemberByUserId } from '@/server/actions/members';
 import { buttonVariants, Card, Link, Separator } from '@heroui/react';
 import Image from 'next/image';
@@ -38,7 +38,7 @@ export default async function Layout({
             height={500}
             loading="eager"
             sizes="(max-width: 768px) 100vw, 33vw"
-            src={member?.image || '/image/user.png'}
+            src={transformImageUrl(member?.image) || '/image/user.png'}
             className="aspect-square object-cover relative rounded-full p-6"
           />
           <Card.Content>
